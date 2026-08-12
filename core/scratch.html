@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="theme.css" />
+<style>
+  html, body { background: transparent; height: 100%; overflow: hidden; }
+  #box { width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+  <div id="box" class="ov-panel">
+    <div class="ov-head">
+      <span class="grip">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><circle cx="5" cy="3" r="1" fill="currentColor"/><circle cx="5" cy="8" r="1" fill="currentColor"/><circle cx="5" cy="13" r="1" fill="currentColor"/><circle cx="10" cy="3" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>
+      </span>
+      <span class="ov-title">Scratch</span>
+      <div class="ov-head-right">
+        <button class="icon-btn" id="pinBtn" title="Keep visible when overlay closes" aria-label="Pin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/></svg>
+        </button>
+        <button class="icon-btn danger" id="close" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ov-body">
+      <textarea id="note" class="ov-textarea" placeholder="Quick freeform note…"></textarea>
+    </div>
+    <div class="ov-foot">
+      <span>Not tied to a round</span>
+      <span id="status" style="display:flex; align-items:center; gap:5px;">
+        <span class="dot win"></span>
+        Saved
+      </span>
+    </div>
+  </div>
+  <script src="theme-runtime.js"></script>
+  <script>
+    const noteEl = document.getElementById('note');
+    const statusEl = document.getElementById('status');
+    let saveTimer = null;
+
+    window.scratch.onTheme((theme) => applyTheme(theme));
+
+    window.scratch.onLoad((text) => { noteEl.value = text || ''; });
+
+    // Same idea as the notepad's pin: when active, this window stays
+    // visible even after the overlay/backdrop closes.
+    window.scratch.onPersistState((persistent) => {
+      document.getElementById('pinBtn').classList.toggle('active', persistent);
+    });
+    document.getElementById('pinBtn').addEventListener('click', () => window.scratch.togglePersist());
+
+    noteEl.addEventListener('input', () => {
+      statusEl.innerHTML = '<span class="dot accent"></span>Saving…';
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        window.scratch.save(noteEl.value);
+        statusEl.innerHTML = '<span class="dot win"></span>Saved';
+      }, 300);
+    });
+
+    document.getElementById('close').addEventListener('click', () => {
+      window.scratch.save(noteEl.value);
+      window.scratch.hide();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        window.scratch.save(noteEl.value);
+        window.scratch.hide();
+      }
+    });
+  </script>
+</body>
+</html>

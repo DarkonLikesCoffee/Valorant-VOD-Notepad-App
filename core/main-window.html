@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="theme.css" />
+<style>
+  html, body { height: 100%; background: var(--background); color: var(--foreground); overflow: hidden; }
+  #layout { display: flex; height: 100%; flex-direction: column; }
+
+  /* ---- title bar ---- */
+  #titlebar {
+    height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); background: var(--card);
+    -webkit-app-region: drag; padding: 0 4px 0 14px; user-select: none;
+  }
+  #titlebar .brand { display: flex; align-items: center; gap: 10px; }
+  #titlebar .wordmark { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: .18em; }
+  #titlebar .sep-v { width: 1px; height: 16px; background: var(--border); }
+  #titlebar .section-now { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted-foreground); }
+  #titlebar .saved-state { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+  #titlebar .right-group { display: flex; align-items: center; gap: 12px; -webkit-app-region: no-drag; }
+
+  /* Window controls -- these exist because the window is frameless
+     (see main-window.js) and no longer gets minimize/maximize/close
+     from the OS. -webkit-app-region: no-drag is required on every
+     clickable thing inside a drag region, or clicks just drag the
+     window instead of registering -- same lesson as the toolbar's
+     buttons and the settings scrollarea fix from earlier. */
+  .win-controls { display: flex; -webkit-app-region: no-drag; }
+  .win-controls button {
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; color: var(--muted-foreground); cursor: pointer;
+  }
+  .win-controls button:hover { background: color-mix(in oklch, var(--elevated) 70%, transparent); color: var(--foreground); }
+  .win-controls button.close-btn:hover { background: var(--loss); color: white; }
+
+  /* ---- body split ---- */
+  #body { display: flex; flex: 1; min-height: 0; }
+
+  /* ---- sidebar ---- */
+  #nav {
+    width: 220px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between;
+    background: var(--background); border-right: 1px solid var(--border);
+  }
+  #nav .nav-top { padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 6px; cursor: pointer;
+    color: var(--muted-foreground); font-size: 13px; font-weight: 500;
+  }
+  .nav-item:hover { background: color-mix(in oklch, var(--elevated) 60%, transparent); color: var(--foreground); }
+  .nav-item.active { background: var(--elevated); color: var(--foreground); }
+  .nav-item .rail {
+    position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 18px; border-radius: 0 3px 3px 0; background: var(--accent); opacity: 0;
+  }
+  .nav-item.active .rail { opacity: 1; left: 0; }
+  .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .nav-item.active svg { color: var(--accent); }
+
+  #nav .nav-bottom { padding: 12px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border); }
+  #status-card { border: 1px solid var(--border); border-radius: 6px; background: color-mix(in oklch, var(--card) 60%, transparent); padding: 10px; }
+  #status-card .dotline { display: flex; align-items: center; gap: 6px; }
+  #status-card .status-dot { position: relative; width: 8px; height: 8px; }
+  #status-card .status-dot .core { position: absolute; inset: 0; border-radius: 999px; background: var(--muted-foreground); }
+  #status-card.running .status-dot .core { background: var(--win); }
+  #status-card .status-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+  #status-card p { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: var(--muted-foreground); }
+  .nav-footline { display: flex; justify-content: space-between; padding: 0 2px; font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+
+  /* ---- content ---- */
+  #content { flex: 1; min-width: 0; overflow: hidden; }
+  .pane { display: none; height: 100%; flex-direction: column; }
+  .pane.active { display: flex; }
+
+  .pane-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 16px 24px; flex-shrink: 0; }
+  .pane-head h1 { margin: 3px 0 0; font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: .01em; }
+
+  /* Scratch pad */
+  #pane-scratch .writing-surface { flex: 1; min-height: 0; display: flex; justify-content: center; overflow-y: auto; padding: 24px; }
+  #pane-scratch .surface-inner { width: 100%; display: flex; flex-direction: column; }
+  #pane-scratch .surface-card { flex: 1; border-radius: 12px; border: 1px solid var(--border); background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  #scratch-box {
+    width: 100%; height: 100%; min-height: 420px; resize: none; border: none; border-radius: 12px;
+    background: transparent; color: var(--foreground); font-family: var(--font-sans); font-size: 14px;
+    line-height: 1.7; padding: 20px; outline: none;
+  }
+  #scratch-box::placeholder { color: color-mix(in oklch, var(--muted-foreground) 65%, transparent); }
+  .pane-foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding: 9px 24px; flex-shrink: 0; font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+  .pane-foot .saved-line { display: flex; align-items: center; gap: 5px; }
+
+  /* Session history */
+  #pane-sessions { flex-direction: row; }
+  #sess-list-pane { width: 300px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  #sess-list-pane .pane-head { flex-direction: column; align-items: flex-start; padding: 16px; }
+  #sess-list-pane .tally { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; width: 100%; font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+  #sessions-list { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+  .sess-row { position: relative; border-radius: 8px; border: 1px solid var(--border); background: var(--card); padding: 10px 12px; cursor: pointer; text-align: left; }
+  .sess-row:hover { border-color: var(--border-strong); background: color-mix(in oklch, var(--elevated) 60%, transparent); }
+  .sess-row .top { display: flex; align-items: center; justify-content: space-between; }
+  .sess-row .left { display: flex; align-items: center; gap: 8px; }
+  .sess-row .date { font-family: var(--font-display); font-size: 13px; font-weight: 600; }
+  .sess-row .score { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+  .sess-row .sub { margin-top: 6px; display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--border); padding-top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+
+  #sess-detail { flex: 1; min-width: 0; overflow-y: auto; }
+  #sess-empty { color: var(--muted-foreground); font-size: 12px; text-align: center; margin-top: 40px; padding: 0 20px; }
+
+  /* ---- Settings pane -- embedded directly, not a popup window.
+     Same underlying form (settings-form.js) as the overlay's floating
+     settings panel, just laid out as a sidebar + content split since
+     there's real width to work with here instead of a small floating box. ---- */
+  #pane-settings { flex-direction: row; }
+  #settings-nav {
+    width: 200px; flex-shrink: 0; border-right: 1px solid var(--border);
+    padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+  }
+  #settings-nav .qn-btn {
+    all: unset; display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    font-family: var(--font-sans); font-size: 12.5px; font-weight: 500; color: var(--muted-foreground);
+  }
+  #settings-nav .qn-btn:hover { background: color-mix(in oklch, var(--elevated) 60%, transparent); color: var(--foreground); }
+  #settings-nav .qn-btn.active { background: var(--elevated); color: var(--foreground); }
+
+  #settings-scroll { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 28px 28px; }
+  #settings-scroll .group { max-width: 640px; margin-bottom: 22px; scroll-margin-top: 4px; }
+  #settings-scroll .group-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 9px; }
+  #settings-scroll .group-icon {
+    width: 32px; height: 32px; flex-shrink: 0; border-radius: 7px;
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--accent);
+  }
+  #settings-scroll .group-icon svg { width: 17px; height: 17px; }
+  #settings-scroll .group-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; }
+  #settings-scroll .group-desc { font-size: 12px; line-height: 1.5; color: var(--muted-foreground); margin-top: 2px; }
+  #settings-scroll .card { border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; background: var(--card); }
+  #settings-scroll h4.subhead {
+    margin: 0; padding: 6px 12px; background: color-mix(in oklch, var(--elevated) 70%, transparent);
+    font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted-foreground);
+  }
+  #settings-scroll h4.subhead:not(:first-child) { border-top: 1px solid var(--border); }
+  #settings-scroll .row {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 10px 12px; border-top: 1px solid var(--border);
+  }
+  #settings-scroll .card > .row:first-child, #settings-scroll .card > div > .row:first-child { border-top: none; }
+  #settings-scroll .row label { color: var(--foreground); font-size: 12.5px; }
+  #settings-scroll small.hint { display: block; color: var(--muted-foreground); font-size: 11px; line-height: 1.5; margin: -2px 0 8px; }
+  #settings-scroll input[type=text] {
+    width: 58px; background: var(--muted); border: 1px solid var(--border);
+    border-radius: 5px; color: var(--foreground); padding: 5px 7px; font-size: 12px; font-family: var(--font-mono);
+  }
+  #settings-scroll input[type=range] { width: 130px; height: 4px; accent-color: var(--accent); cursor: pointer; }
+  #settings-scroll input[type=checkbox] {
+    -webkit-appearance: none; appearance: none;
+    width: 34px; height: 19px; border-radius: 999px;
+    border: 1px solid var(--border-strong); background: var(--muted);
+    position: relative; cursor: pointer; flex-shrink: 0; transition: background-color .15s, border-color .15s;
+  }
+  #settings-scroll input[type=checkbox]::after {
+    content: ''; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px;
+    border-radius: 999px; background: var(--foreground); box-shadow: 0 1px 2px rgba(0,0,0,.3);
+    transition: transform .15s;
+  }
+  #settings-scroll input[type=checkbox]:checked { background: var(--accent); border-color: var(--accent); }
+  #settings-scroll input[type=checkbox]:checked::after { transform: translateX(15px); background: var(--accent-foreground); }
+  #settings-scroll select {
+    background: var(--muted); border: 1px solid var(--border); color: var(--foreground);
+    border-radius: 5px; padding: 5px 7px; font-size: 12.5px; font-family: var(--font-sans);
+  }
+  #settings-scroll .btnrow { display: flex; gap: 4px; flex-wrap: wrap; }
+  #settings-scroll .btnrow button, #settings-scroll .hk-btn {
+    background: var(--muted); border: 1px solid var(--border); color: var(--foreground);
+    border-radius: 5px; padding: 6px 11px; font-size: 11px; font-family: var(--font-mono);
+    text-transform: uppercase; letter-spacing: .04em; cursor: pointer;
+  }
+  #settings-scroll .btnrow button:hover, #settings-scroll .hk-btn:hover { background: color-mix(in oklch, var(--elevated) 80%, transparent); }
+  #settings-scroll .btnrow button.active { background: color-mix(in oklch, var(--accent) 16%, transparent); border-color: var(--accent); color: var(--accent); }
+  #settings-scroll .hk-btn { width: 132px; text-transform: none; letter-spacing: 0; }
+  #settings-scroll .hk-btn.listening { background: color-mix(in oklch, var(--accent) 16%, transparent); border-color: var(--accent); color: var(--accent); }
+  #settings-scroll .beta-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
+    color: var(--accent); border-radius: 4px; padding: 2px 6px;
+    font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .06em;
+  }
+  #settings-footer {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    padding: 12px 28px; border-top: 1px solid var(--border);
+  }
+  #savedFlag {
+    display: flex; align-items: center; gap: 5px; margin-right: auto;
+    font-family: var(--font-mono); font-size: 11px; color: var(--win); opacity: 0; transition: opacity .2s;
+  }
+  #savedFlag.show { opacity: 1; }
+  #saveBtn {
+    background: var(--accent); color: var(--accent-foreground); border: none; border-radius: 7px;
+    padding: 9px 18px; cursor: pointer; font-size: 13px; font-weight: 500;
+  }
+  #saveBtn:hover { filter: brightness(1.08); }
+</style>
+</head>
+<body>
+  <div id="layout">
+    <div id="titlebar">
+      <div class="brand">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 4.5 L3 19.5 L9 15 L9 9 L15 9 L21 4.5 Z" class="lm-a"/>
+            <path d="M9 15 L21 15 L15 19.5 L9 19.5 Z" class="lm-b"/>
+          </svg>
+        </span>
+        <span class="wordmark">VODNOTE</span>
+        <span class="sep-v"></span>
+        <span class="section-now" id="section-now">Scratch Pad</span>
+      </div>
+      <div class="right-group">
+        <div class="saved-state">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--win)"><path d="M20 6L9 17l-5-5"/></svg>
+          <span>All changes saved</span>
+        </div>
+        <div class="win-controls">
+          <button id="winMinimize" title="Minimize" aria-label="Minimize">
+            <svg viewBox="0 0 12 12" width="11" height="11"><rect x="1.5" y="5.5" width="9" height="1" fill="currentColor"/></svg>
+          </button>
+          <button id="winMaximize" title="Maximize / Restore" aria-label="Maximize or restore">
+            <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="9" height="9"/></svg>
+          </button>
+          <button id="winClose" class="close-btn" title="Close" aria-label="Close">
+            <svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="body">
+      <nav id="nav">
+        <div class="nav-top">
+          <div class="section-label" style="padding:4px 10px 8px;">Workspace</div>
+          <div class="nav-item active" data-tab="scratch">
+            <span class="rail"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3H8a2 2 0 00-2 2v14a2 2 0 002 2h13V3z"/><path d="M6 3v18"/></svg>
+            Scratch Pad
+          </div>
+          <div class="nav-item" data-tab="sessions">
+            <span class="rail"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+            Session History
+          </div>
+          <div class="nav-item" data-tab="settings">
+            <span class="rail"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg>
+            Settings
+          </div>
+        </div>
+        <div class="nav-bottom">
+          <div id="status-card">
+            <div class="dotline">
+              <span class="status-dot"><span class="core"></span></span>
+              <span class="status-label" id="status-label">Overlay standby</span>
+            </div>
+            <p>Running in tray. Hotkeys stay live while you play — closing this window won't quit the app.</p>
+          </div>
+          <div class="nav-footline">
+            <span>v5 · standalone</span>
+            <span>tray active</span>
+          </div>
+        </div>
+      </nav>
+
+      <main id="content">
+        <section class="pane active" id="pane-scratch">
+          <div class="pane-head">
+            <div>
+              <div class="section-label">Not tied to a match</div>
+              <h1>Scratch Pad</h1>
+            </div>
+          </div>
+          <div class="writing-surface bg-grid scrollbar-thin">
+            <div class="surface-inner">
+              <div class="surface-card">
+                <textarea id="scratch-box" placeholder="Freeform notes, todos, things to research later…"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="pane-foot">
+            <span id="scratch-counts">0 words · 0 chars</span>
+            <span class="saved-line"><span class="dot win"></span><span id="scratch-status">saved</span></span>
+          </div>
+        </section>
+
+        <section class="pane" id="pane-sessions">
+          <div id="sess-list-pane">
+            <div class="pane-head">
+              <div class="section-label">Your past work</div>
+              <h1>Session History</h1>
+              <div class="tally">
+                <span id="sess-count">0 sessions</span>
+                <span id="sess-wl"></span>
+              </div>
+            </div>
+            <div id="sessions-list" class="scrollbar-thin"></div>
+          </div>
+          <div id="sess-detail" class="bg-grid scrollbar-thin">
+            <div id="sess-empty">No sessions yet — start playing and hit Alt+N.</div>
+          </div>
+        </section>
+
+        <section class="pane" id="pane-settings">
+          <nav id="settings-nav">
+            <button class="qn-btn" data-goto="hotkeys">Hotkeys</button>
+            <button class="qn-btn" data-goto="appearance">Appearance</button>
+            <button class="qn-btn" data-goto="notepad-window">Notepad window</button>
+            <button class="qn-btn" data-goto="toolbar-window">Toolbar window</button>
+            <button class="qn-btn" data-goto="scratch-window">Scratch window</button>
+            <button class="qn-btn" data-goto="sessions-window">Sessions window</button>
+            <button class="qn-btn" data-goto="experimental">Experimental</button>
+          </nav>
+
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+            <div id="settings-scroll" class="scrollbar-thin">
+
+              <section class="group" id="hotkeys">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg></span>
+                  <div>
+                    <div class="group-title">Hotkeys</div>
+                    <div class="group-desc">Click a shortcut, then press the key combo you want. Captured live -- Esc cancels.</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="row"><label>Open/close notepad</label><button class="hk-btn" data-key="toggle"></button></div>
+                  <div class="row"><label>Manual new round</label><button class="hk-btn" data-key="manualRound"></button></div>
+                  <div class="row"><label>New session</label><button class="hk-btn" data-key="newSession"></button></div>
+                  <div class="row"><label>Previous round</label><button class="hk-btn" data-key="prevRound"></button></div>
+                  <div class="row"><label>Next round</label><button class="hk-btn" data-key="nextRound"></button></div>
+                  <div class="row"><label>Open settings</label><button class="hk-btn" data-key="settings"></button></div>
+                  <div class="row"><label>Open toolbar</label><button class="hk-btn" data-key="toolbar"></button></div>
+                  <div class="row"><label>Scratch notepad</label><button class="hk-btn" data-key="scratch"></button></div>
+                  <div class="row"><label>Session history</label><button class="hk-btn" data-key="sessions"></button></div>
+                </div>
+              </section>
+
+              <section class="group" id="appearance">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2a10 10 0 000 20 2 2 0 002-2 1.5 1.5 0 00-.5-1.1 1.5 1.5 0 01.4-2.4A9 9 0 0012 2z"/></svg></span>
+                  <div>
+                    <div class="group-title">Appearance</div>
+                    <div class="group-desc">App-wide theme, plus notepad-specific opacity and text size.</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="row"><label>Theme (app-wide)</label>
+                    <select id="theme">
+                      <option value="dark">Dark</option>
+                      <option value="light">Light</option>
+                      <option value="cyan">Cyan</option>
+                      <option value="amber">Amber</option>
+                    </select>
+                  </div>
+                  <div class="row"><label>Notepad opacity</label><input type="range" id="np-opacity" min="0.3" max="1" step="0.05" /></div>
+                  <div class="row"><label>Notepad text size</label><input type="range" id="np-textSize" min="11" max="20" step="1" /></div>
+                </div>
+              </section>
+
+              <section class="group" id="notepad-window">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></span>
+                  <div><div class="group-title">Notepad window</div></div>
+                </div>
+                <div class="card">
+                  <div class="row"><label>Show when overlay opens</label><input type="checkbox" id="np-showOnOpen" /></div>
+                  <h4 class="subhead">Size</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="np-size-presets">
+                      <button data-preset="small">S</button>
+                      <button data-preset="medium">M</button>
+                      <button data-preset="large">L</button>
+                      <button data-preset="custom">Custom</button>
+                    </div>
+                  </div>
+                  <div class="row" id="np-size-custom-row">
+                    <label>Custom W x H</label>
+                    <span><input type="text" id="np-customWidth" /> x <input type="text" id="np-customHeight" /></span>
+                  </div>
+                  <h4 class="subhead">Position</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="np-pos-presets">
+                      <button data-preset="top-left">TL</button>
+                      <button data-preset="top-right">TR</button>
+                      <button data-preset="bottom-left">BL</button>
+                      <button data-preset="bottom-right">BR</button>
+                      <button data-preset="center">Center</button>
+                    </div>
+                  </div>
+                  <small class="hint" style="padding:0 12px 10px;">Dragging the notepad sets a custom position automatically.</small>
+                </div>
+              </section>
+
+              <section class="group" id="toolbar-window">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></span>
+                  <div><div class="group-title">Toolbar window</div></div>
+                </div>
+                <div class="card">
+                  <div class="row"><label>Show when overlay opens</label><input type="checkbox" id="tb-showOnOpen" /></div>
+                  <h4 class="subhead">Size</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="tb-size-presets">
+                      <button data-preset="small">S</button>
+                      <button data-preset="medium">M</button>
+                      <button data-preset="large">L</button>
+                      <button data-preset="custom">Custom</button>
+                    </div>
+                  </div>
+                  <div class="row" id="tb-size-custom-row">
+                    <label>Custom W x H</label>
+                    <span><input type="text" id="tb-customWidth" /> x <input type="text" id="tb-customHeight" /></span>
+                  </div>
+                  <h4 class="subhead">Position</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="tb-pos-presets">
+                      <button data-preset="top-left">TL</button>
+                      <button data-preset="top-right">TR</button>
+                      <button data-preset="bottom-left">BL</button>
+                      <button data-preset="bottom-right">BR</button>
+                      <button data-preset="center">Center</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="group" id="scratch-window">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></span>
+                  <div><div class="group-title">Scratch notepad window</div></div>
+                </div>
+                <div class="card">
+                  <div class="row"><label>Show when overlay opens</label><input type="checkbox" id="sc-showOnOpen" /></div>
+                  <h4 class="subhead">Size</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="sc-size-presets">
+                      <button data-preset="small">S</button>
+                      <button data-preset="medium">M</button>
+                      <button data-preset="large">L</button>
+                      <button data-preset="custom">Custom</button>
+                    </div>
+                  </div>
+                  <div class="row" id="sc-size-custom-row">
+                    <label>Custom W x H</label>
+                    <span><input type="text" id="sc-customWidth" /> x <input type="text" id="sc-customHeight" /></span>
+                  </div>
+                  <h4 class="subhead">Position</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="sc-pos-presets">
+                      <button data-preset="top-left">TL</button>
+                      <button data-preset="top-right">TR</button>
+                      <button data-preset="bottom-left">BL</button>
+                      <button data-preset="bottom-right">BR</button>
+                      <button data-preset="center">Center</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="group" id="sessions-window">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></span>
+                  <div><div class="group-title">Session history window</div></div>
+                </div>
+                <div class="card">
+                  <div class="row"><label>Show when overlay opens</label><input type="checkbox" id="ss-showOnOpen" /></div>
+                  <h4 class="subhead">Size</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="ss-size-presets">
+                      <button data-preset="small">S</button>
+                      <button data-preset="medium">M</button>
+                      <button data-preset="large">L</button>
+                      <button data-preset="custom">Custom</button>
+                    </div>
+                  </div>
+                  <div class="row" id="ss-size-custom-row">
+                    <label>Custom W x H</label>
+                    <span><input type="text" id="ss-customWidth" /> x <input type="text" id="ss-customHeight" /></span>
+                  </div>
+                  <h4 class="subhead">Position</h4>
+                  <div class="row" style="border-top:none;">
+                    <div class="btnrow" id="ss-pos-presets">
+                      <button data-preset="top-left">TL</button>
+                      <button data-preset="top-right">TR</button>
+                      <button data-preset="bottom-left">BL</button>
+                      <button data-preset="bottom-right">BR</button>
+                      <button data-preset="center">Center</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="group" id="experimental">
+                <div class="group-head">
+                  <span class="group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6L4 20a1 1 0 001 2h14a1 1 0 001-2L15 8V2M9 2h6M8 15h8"/></svg></span>
+                  <div>
+                    <div class="group-title">Experimental</div>
+                    <div class="group-desc">Optional features still in testing. Leave off unless you want to try them.</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="row">
+                    <div>
+                      <label>Tab-triggered scoreboard capture</label>
+                      <small class="hint" style="margin:2px 0 0;">Screenshots the scoreboard when Tab is pressed while Valorant has focus. Tab behaves normally everywhere else.</small>
+                    </div>
+                    <span style="display:flex; align-items:center; gap:8px;">
+                      <span class="beta-tag">Beta</span>
+                      <input type="checkbox" id="tabCapture" />
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+            </div>
+            <div id="settings-footer">
+              <span id="savedFlag">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                Saved
+              </span>
+              <button id="saveBtn">Save changes</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="theme-runtime.js"></script>
+  <script src="settings-form.js"></script>
+  <script>
+    const SECTION_TITLES = { scratch: 'Scratch Pad', sessions: 'Session History', settings: 'Settings' };
+
+    document.querySelectorAll('.nav-item').forEach((el) => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
+        document.querySelectorAll('.pane').forEach((p) => p.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('pane-' + el.dataset.tab).classList.add('active');
+        document.getElementById('section-now').textContent = SECTION_TITLES[el.dataset.tab];
+        if (el.dataset.tab === 'sessions') renderSessions();
+      });
+    });
+
+    window.mainApp.onTheme((theme) => applyTheme(theme));
+
+    document.getElementById('winMinimize').addEventListener('click', () => { console.log('[titlebar] minimize clicked'); window.mainApp.minimize(); });
+    document.getElementById('winMaximize').addEventListener('click', () => { console.log('[titlebar] maximize clicked'); window.mainApp.toggleMaximize(); });
+    document.getElementById('winClose').addEventListener('click', () => { console.log('[titlebar] close clicked'); window.mainApp.closeWindow(); });
+
+    // ---- Scratch pad ----
+    const scratchBox = document.getElementById('scratch-box');
+    const scratchStatus = document.getElementById('scratch-status');
+    const scratchCounts = document.getElementById('scratch-counts');
+    let scratchSaveTimer = null;
+
+    function updateCounts() {
+      const val = scratchBox.value;
+      const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+      scratchCounts.textContent = `${words} words · ${val.length} chars`;
+    }
+
+    window.mainApp.getScratch().then((text) => { scratchBox.value = text || ''; updateCounts(); });
+    scratchBox.addEventListener('input', () => {
+      updateCounts();
+      scratchStatus.textContent = 'saving...';
+      clearTimeout(scratchSaveTimer);
+      scratchSaveTimer = setTimeout(() => {
+        window.mainApp.saveScratch(scratchBox.value);
+        scratchStatus.textContent = 'saved';
+      }, 300);
+    });
+
+    // ---- Session history ----
+    async function renderSessions() {
+      const listEl = document.getElementById('sessions-list');
+      const detailEl = document.getElementById('sess-detail');
+      const items = await window.mainApp.listSessions();
+      const wins = items.filter((s) => s.won >= s.lost && (s.won + s.lost) > 0).length;
+      document.getElementById('sess-count').textContent = `${items.length} session${items.length === 1 ? '' : 's'}`;
+      document.getElementById('sess-wl').innerHTML = items.length
+        ? `<span style="color:var(--win)">${wins}W</span> · <span style="color:var(--loss)">${items.length - wins}L</span>`
+        : '';
+
+      if (!items.length) {
+        listEl.innerHTML = '';
+        detailEl.innerHTML = '<div id="sess-empty">No sessions yet — start playing and hit Alt+N.</div>';
+        return;
+      }
+      listEl.innerHTML = '';
+      for (const s of items) {
+        const date = new Date(s.startedAt).toLocaleString();
+        const total = s.won + s.lost;
+        const result = total > 0 ? (s.won >= s.lost ? 'W' : 'L') : null;
+        const tag = result
+          ? `<span class="result-tag ${result === 'W' ? 'win' : 'loss'}">${result}</span>`
+          : `<span class="result-tag" style="background:var(--muted); color:var(--muted-foreground);">—</span>`;
+        const div = document.createElement('div');
+        div.className = 'sess-row';
+        div.innerHTML = `
+          <div class="top">
+            <span class="left">${tag}<span class="date">Session</span></span>
+            <span class="score">${s.won}-${s.lost}</span>
+          </div>
+          <div class="sub">${date} · ${s.roundCount} round${s.roundCount === 1 ? '' : 's'} noted</div>
+        `;
+        div.addEventListener('click', () => window.mainApp.openSession(s.mdFile));
+        listEl.appendChild(div);
+      }
+    }
+
+    // ---- Settings (embedded) ----
+    // Same shared form as the overlay's floating settings panel -- this
+    // adapter is the only part that's specific to being inside the main
+    // window instead of a popup.
+    initSettingsForm({
+      load: (cb) => {
+        window.mainApp.getSettings().then(cb); // first paint
+        window.mainApp.onSettingsPush(cb); // stay in sync if changed via the overlay
+      },
+      save: (data) => window.mainApp.saveSettings(data),
+      close: null, // nothing to "close" -- this pane just stays open
+      previewTheme: (theme) => window.mainApp.previewTheme(theme)
+    });
+  </script>
+</body>
+</html>

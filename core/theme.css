@@ -1,0 +1,305 @@
+/* ============================================================
+   VODNOTE shared design system
+   Ported from the v0.app prototype (prototype-0-darkonss).
+   Every window in the app loads this file for consistent tokens,
+   type, and component classes. Theme is switched by toggling
+   `theme-dark` / `theme-light` on <html> (see applyTheme() in
+   theme-runtime.js, called by every window's onTheme handler).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-display: 'Chakra Petch', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/* ---- DARK (default) ---- */
+html.theme-dark, html:not(.theme-light) {
+  color-scheme: dark;
+  --background: oklch(0.165 0.006 264);
+  --foreground: oklch(0.955 0.003 260);
+  --card: oklch(0.205 0.007 264);
+  --card-foreground: oklch(0.955 0.003 260);
+  --elevated: oklch(0.238 0.008 264);
+  --popover: oklch(0.222 0.008 264);
+  --primary: oklch(0.637 0.224 20.5);
+  --primary-foreground: oklch(0.99 0.01 20);
+  --secondary: oklch(0.27 0.008 264);
+  --muted: oklch(0.27 0.008 264);
+  --muted-foreground: oklch(0.7 0.008 262);
+  --accent: oklch(0.637 0.224 20.5);
+  --accent-foreground: oklch(0.99 0.01 20);
+  --win: oklch(0.74 0.16 156);
+  --loss: oklch(0.63 0.19 20);
+  --border: oklch(1 0 0 / 9%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.637 0.224 20.5 / 55%);
+
+  --overlay-panel: oklch(0.18 0.007 264 / 0.86);
+  --overlay-foreground: oklch(0.97 0.003 260);
+  --overlay-border: oklch(1 0 0 / 14%);
+  --overlay-muted: oklch(0.72 0.008 262);
+}
+
+/* ---- LIGHT ---- */
+html.theme-light {
+  color-scheme: light;
+  --background: oklch(0.965 0.003 260);
+  --foreground: oklch(0.22 0.008 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.008 264);
+  --elevated: oklch(0.99 0.002 260);
+  --popover: oklch(1 0 0);
+  --primary: oklch(0.585 0.222 22);
+  --primary-foreground: oklch(0.99 0.01 20);
+  --secondary: oklch(0.93 0.004 260);
+  --muted: oklch(0.93 0.004 260);
+  --muted-foreground: oklch(0.5 0.008 262);
+  --accent: oklch(0.585 0.222 22);
+  --accent-foreground: oklch(0.99 0.01 20);
+  --win: oklch(0.58 0.15 156);
+  --loss: oklch(0.585 0.2 22);
+  --border: oklch(0.2 0.01 264 / 12%);
+  --border-strong: oklch(0.2 0.01 264 / 20%);
+  --input: oklch(0.2 0.01 264 / 15%);
+  --ring: oklch(0.585 0.222 22 / 45%);
+
+  --overlay-panel: oklch(0.99 0.002 260 / 0.9);
+  --overlay-foreground: oklch(0.2 0.008 264);
+  --overlay-border: oklch(0.2 0.01 264 / 16%);
+  --overlay-muted: oklch(0.46 0.008 262);
+}
+
+/* ---- CYAN (new) ---- */
+html.theme-cyan {
+  color-scheme: dark;
+  --background: oklch(0.165 0.006 264);
+  --foreground: oklch(0.955 0.003 260);
+  --card: oklch(0.205 0.007 264);
+  --card-foreground: oklch(0.955 0.003 260);
+  --elevated: oklch(0.238 0.008 264);
+  --popover: oklch(0.222 0.008 264);
+  --primary: oklch(0.68 0.16 220);
+  --primary-foreground: oklch(0.99 0.01 220);
+  --secondary: oklch(0.27 0.008 264);
+  --muted: oklch(0.27 0.008 264);
+  --muted-foreground: oklch(0.7 0.008 262);
+  --accent: oklch(0.68 0.16 220);
+  --accent-foreground: oklch(0.99 0.01 220);
+  --win: oklch(0.74 0.16 156);
+  --loss: oklch(0.63 0.19 20);
+  --border: oklch(1 0 0 / 9%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.68 0.16 220 / 55%);
+
+  --overlay-panel: oklch(0.18 0.007 264 / 0.86);
+  --overlay-foreground: oklch(0.97 0.003 260);
+  --overlay-border: oklch(1 0 0 / 14%);
+  --overlay-muted: oklch(0.72 0.008 262);
+}
+
+/* ---- AMBER (new) ---- */
+html.theme-amber {
+  color-scheme: dark;
+  --background: oklch(0.165 0.006 264);
+  --foreground: oklch(0.955 0.003 260);
+  --card: oklch(0.205 0.007 264);
+  --card-foreground: oklch(0.955 0.003 260);
+  --elevated: oklch(0.238 0.008 264);
+  --popover: oklch(0.222 0.008 264);
+  --primary: oklch(0.75 0.15 70);
+  --primary-foreground: oklch(0.18 0.02 70);
+  --secondary: oklch(0.27 0.008 264);
+  --muted: oklch(0.27 0.008 264);
+  --muted-foreground: oklch(0.7 0.008 262);
+  --accent: oklch(0.75 0.15 70);
+  --accent-foreground: oklch(0.18 0.02 70);
+  --win: oklch(0.74 0.16 156);
+  --loss: oklch(0.63 0.19 20);
+  --border: oklch(1 0 0 / 9%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.75 0.15 70 / 55%);
+
+  --overlay-panel: oklch(0.18 0.007 264 / 0.86);
+  --overlay-foreground: oklch(0.97 0.003 260);
+  --overlay-border: oklch(1 0 0 / 14%);
+  --overlay-muted: oklch(0.72 0.008 262);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+}
+
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+
+/* ---- scrollbars ---- */
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* subtle technical grid, used behind writing surfaces in the main window */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, oklch(0.5 0 0 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.5 0 0 / 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ---- logo mark ---- */
+.logo-mark { width: 20px; height: 20px; flex-shrink: 0; display: inline-flex; }
+.logo-mark svg { width: 100%; height: 100%; }
+.logo-mark .lm-a { fill: var(--accent); }
+.logo-mark .lm-b { fill: var(--overlay-foreground); opacity: 0.7; }
+
+/* ---- section label (technical eyebrow) ---- */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted-foreground);
+}
+
+/* ---- keycap / hotkey chip ---- */
+.keycap {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 20px; min-width: 20px; padding: 0 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  background: var(--elevated);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--foreground);
+  box-shadow: 0 1px 0 0 var(--border-strong);
+}
+.hotkey-combo { display: inline-flex; align-items: center; gap: 4px; }
+.hotkey-combo .plus { font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); }
+
+/* ---- result pill ---- */
+.result-tag {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+}
+.result-tag.win { background: color-mix(in oklch, var(--win) 15%, transparent); color: var(--win); }
+.result-tag.loss { background: color-mix(in oklch, var(--loss) 15%, transparent); color: var(--loss); }
+
+/* ---- toggle switch ---- */
+.toggle {
+  position: relative; display: inline-flex; align-items: center;
+  width: 36px; height: 20px; border-radius: 999px; border: 1px solid var(--border-strong);
+  background: var(--muted); cursor: pointer; padding: 0; flex-shrink: 0;
+  transition: background-color .15s, border-color .15s;
+}
+.toggle.on { background: var(--accent); border-color: var(--accent); }
+.toggle .knob {
+  position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 999px;
+  background: var(--background); box-shadow: 0 1px 2px rgba(0,0,0,.4);
+  transition: transform .15s;
+}
+.toggle.on .knob { transform: translateX(16px); }
+
+/* ---- segmented control ---- */
+.segmented {
+  display: inline-flex; align-items: center; gap: 2px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--muted); padding: 2px;
+}
+.segmented button {
+  border: none; background: transparent; cursor: pointer;
+  font-family: var(--font-mono); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 11px; padding: 6px 12px; border-radius: 5px; color: var(--muted-foreground);
+  transition: background-color .12s, color .12s;
+}
+.segmented button.active { background: var(--elevated); color: var(--foreground); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.segmented button:not(.active):hover { color: var(--foreground); }
+.segmented.sm button { padding: 4px 8px; font-size: 10px; }
+
+/* ---- generic icon button ---- */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px; border: none;
+  background: transparent; color: var(--overlay-muted); cursor: pointer;
+  transition: background-color .12s, color .12s;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.10); color: var(--overlay-foreground); }
+.icon-btn.danger:hover { background: var(--accent); color: var(--accent-foreground); }
+.icon-btn.active { color: var(--accent); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+/* ---- floating overlay panel chrome (Panel.tsx equivalent) ---- */
+.ov-panel {
+  display: flex; flex-direction: column;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--overlay-border);
+  background: var(--overlay-panel);
+  color: var(--overlay-foreground);
+  box-shadow: 0 20px 40px rgba(0,0,0,.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+.ov-panel .ov-accent { height: 2px; width: 100%; flex-shrink: 0; background: var(--accent); }
+.ov-panel .ov-head {
+  display: flex; align-items: center; gap: 6px; height: 32px; flex-shrink: 0;
+  padding: 0 8px; border-bottom: 1px solid color-mix(in oklch, var(--overlay-border) 70%, transparent);
+  -webkit-app-region: drag; cursor: grab;
+}
+.ov-panel .ov-head .grip { color: var(--overlay-muted); flex-shrink: 0; }
+.ov-panel .ov-head .ov-title {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.14em;
+}
+.ov-panel .ov-head .ov-head-right { display: flex; align-items: center; gap: 2px; -webkit-app-region: no-drag; }
+.ov-panel .ov-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ov-panel .ov-foot {
+  flex-shrink: 0; border-top: 1px solid color-mix(in oklch, var(--overlay-border) 70%, transparent);
+  padding: 6px 10px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--overlay-muted); display: flex; align-items: center; justify-content: space-between;
+  -webkit-app-region: no-drag;
+}
+.dot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+.dot.win { background: var(--win); }
+.dot.accent { background: var(--accent); }
+
+/* pill badge, e.g. round number / side */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px; border-radius: 5px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  padding: 2px 6px;
+}
+.pill.accent-soft { background: color-mix(in oklch, var(--accent) 15%, transparent); color: var(--accent); }
+.pill.accent-solid { background: var(--accent); color: var(--accent-foreground); }
+.pill.loss-soft { background: color-mix(in oklch, var(--loss) 20%, transparent); color: var(--loss); font-size: 9px; text-transform: uppercase; letter-spacing: .05em; padding: 2px 6px; }
+.pill.win-soft { background: color-mix(in oklch, var(--win) 20%, transparent); color: var(--win); font-size: 9px; text-transform: uppercase; letter-spacing: .05em; padding: 2px 6px; }
+
+textarea.ov-textarea {
+  -webkit-app-region: no-drag;
+  flex: 1; width: 100%; resize: none; border: none; background: transparent;
+  color: var(--overlay-foreground); font-family: var(--font-sans); font-size: 13px;
+  line-height: 1.6; padding: 12px; outline: none;
+}
+textarea.ov-textarea::placeholder { color: color-mix(in oklch, var(--overlay-muted) 60%, transparent); }
+
+.fmt-bar {
+  display: flex; align-items: center; gap: 2px; padding: 6px;
+  border-bottom: 1px solid color-mix(in oklch, var(--overlay-border) 60%, transparent);
+  -webkit-app-region: no-drag; flex-shrink: 0;
+}

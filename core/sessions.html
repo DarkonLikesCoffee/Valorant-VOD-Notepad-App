@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="theme.css" />
+<style>
+  html, body { background: transparent; height: 100%; overflow: hidden; }
+  #box { width: 100vw; height: 100vh; }
+  #list { padding: 6px; overflow-y: auto; -webkit-app-region: no-drag; }
+  .item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 8px; margin-bottom: 2px;
+    border-radius: 6px; border: none; background: transparent; cursor: pointer;
+    color: var(--overlay-foreground); text-align: left; font-family: var(--font-sans);
+  }
+  .item:hover { background: rgba(255,255,255,0.10); }
+  .item .meta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .item .date { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: .01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: .04em; color: var(--overlay-muted); margin-top: 2px; }
+  .item .score { font-family: var(--font-mono); font-size: 12px; tabular-nums: 1; color: var(--overlay-foreground); }
+  #empty { color: var(--overlay-muted); font-size: 12px; text-align: center; margin-top: 24px; padding: 0 12px; }
+</style>
+</head>
+<body>
+  <div id="box" class="ov-panel">
+    <div class="ov-head">
+      <span class="grip">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><circle cx="5" cy="3" r="1" fill="currentColor"/><circle cx="5" cy="8" r="1" fill="currentColor"/><circle cx="5" cy="13" r="1" fill="currentColor"/><circle cx="10" cy="3" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>
+      </span>
+      <span class="ov-title">Session History</span>
+      <div class="ov-head-right">
+        <button class="icon-btn danger" id="close" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ov-body scrollbar-thin" style="overflow-y:auto;">
+      <div id="list"></div>
+    </div>
+    <div class="ov-foot">
+      <span id="countLabel">0 sessions · click to reopen</span>
+    </div>
+  </div>
+  <script src="theme-runtime.js"></script>
+  <script>
+    window.sessions.onTheme((theme) => applyTheme(theme));
+
+    async function render() {
+      const listEl = document.getElementById('list');
+      const items = await window.sessions.list();
+      document.getElementById('countLabel').textContent = `${items.length} session${items.length === 1 ? '' : 's'} · click to reopen`;
+      if (!items.length) {
+        listEl.innerHTML = '<div id="empty">No sessions yet — start playing and hit Alt+N.</div>';
+        return;
+      }
+      listEl.innerHTML = '';
+      for (const s of items) {
+        const btn = document.createElement('button');
+        btn.className = 'item';
+        const date = new Date(s.startedAt).toLocaleString();
+        const total = s.won + s.lost;
+        const result = total > 0 ? (s.won >= s.lost ? 'W' : 'L') : null;
+        const tag = result
+          ? `<span class="result-tag ${result === 'W' ? 'win' : 'loss'}">${result}</span>`
+          : `<span class="result-tag" style="background:var(--muted); color:var(--muted-foreground);">—</span>`;
+        btn.innerHTML = `
+          ${tag}
+          <span class="meta">
+            <span class="date">${date}</span>
+            <span class="sub">${s.roundCount} round${s.roundCount === 1 ? '' : 's'} noted</span>
+          </span>
+          <span class="score">${s.won}-${s.lost}</span>
+        `;
+        btn.addEventListener('click', () => window.sessions.open(s.mdFile));
+        listEl.appendChild(btn);
+      }
+    }
+    render();
+
+    document.getElementById('close').addEventListener('click', () => window.sessions.hide());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.sessions.hide(); });
+  </script>
+</body>
+</html>
