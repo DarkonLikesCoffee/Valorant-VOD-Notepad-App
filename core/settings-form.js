@@ -13,7 +13,7 @@
 //                 for hosts (like the embedded tab) that have nothing to
 //                 "close" -- the pane just stays open.
 function initSettingsForm(adapter) {
-  const HOTKEY_IDS = ['toggle', 'manualRound', 'newSession', 'prevRound', 'nextRound', 'settings', 'toolbar', 'scratch', 'sessions'];
+  const HOTKEY_IDS = ['toggle', 'manualRound', 'newSession', 'prevRound', 'nextRound', 'toolbar', 'scratch', 'sessions'];
   let current = null;
   let listeningKey = null;
 

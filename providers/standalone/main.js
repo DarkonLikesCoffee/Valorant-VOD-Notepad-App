@@ -6,7 +6,6 @@ const { createFloatingWindow, defaultPositionFor, clampToScreen } = require('../
 const { createToolbarWindow } = require('../../core/toolbar-window');
 const { createScratchWindow } = require('../../core/scratch-window');
 const { createSessionsWindow } = require('../../core/sessions-window');
-const { createSettingsWindow } = require('../../core/settings-window');
 const { createBackdropWindow } = require('../../core/overlay-backdrop');
 const { createMainWindow } = require('../../core/main-window');
 const { WindowManager } = require('../../core/window-manager');
@@ -39,7 +38,6 @@ let notepadWin = null;
 let toolbarWin = null;
 let scratchWin = null;
 let sessionsWin = null;
-let settingsWin = null;
 let backdropWin = null;
 let mainWin = null;
 let tray = null;
@@ -83,7 +81,7 @@ let visiblePanels = new Set();
 // the game, same as Valorant Tracker.
 let valorantFocused = false;
 
-const PANEL_IDS = ['notepad', 'toolbar', 'scratch', 'sessions', 'settings'];
+const PANEL_IDS = ['notepad', 'toolbar', 'scratch', 'sessions'];
 
 // Guards against a window's own resize/move handler saving a bounds
 // change that WE triggered programmatically (e.g. applying a preset) --
@@ -122,11 +120,11 @@ function pushThemeToAll() {
 // saving, closeSettingsPanel() below calls the real pushThemeToAll() to
 // snap everything back to the actually-committed theme.
 function previewThemeToAll(theme) {
-  console.log('[theme-preview] broadcasting:', theme);
+  // console.log('[theme-preview] broadcasting:', theme);
 
   [notepadWin, toolbarWin, scratchWin, sessionsWin, mainWin].forEach((w) => {
     if (w) {
-      console.log('[theme-preview] sending to window');
+      // console.log('[theme-preview] sending to window');
       w.webContents.send('theme-data', theme);
     }
   });
@@ -186,7 +184,6 @@ function applyLockState() {
 // which one, always reflects reality.
 function persistSettings() {
   settingsStore.save(SETTINGS_PATH, settings);
-  if (settingsWin) settingsWin.webContents.send('settings-data', settings);
   if (mainWin) mainWin.webContents.send('settings-data', settings);
 }
 
@@ -390,37 +387,18 @@ function createTray() {
   tray.on('click', () => { if (mainWin) wm.showAndFocus(mainWin); });
 }
 
-// ---- Settings ----
-// Settings is now a full member of PANEL_IDS (see above), so it gets the
-// exact same behavior as toolbar/scratch/sessions for free through
-// togglePanel(): opens the whole overlay if it wasn't already open,
-// joins/leaves it on repeated hotkey presses, and gets hidden along with
-// everything else the moment you tab out of Valorant (that's handled
-// generically by the focus-watcher loop and closeOverlay(), since both
-// just iterate PANEL_IDS). openSettingsWindow() stays as the plain
-// "create-if-needed and show" helper that showPanelWindow('settings')
-// below calls into.
-function openSettingsWindow() {
-  if (!settingsWin) {
-    settingsWin = createSettingsWindow();
-    wm.register(settingsWin);
-  }
-  const send = () => settingsWin.webContents.send('settings-data', settings);
-  if (settingsWin.webContents.isLoading()) {
-    settingsWin.webContents.once('did-finish-load', send);
-  } else {
-    send();
-  }
-  wm.showAndFocus(settingsWin);
-}
-
 // ---- Unified overlay ----
 // The backdrop plus whichever panel windows are "in" the overlay are
 // shown/hidden together. Individual panel hotkeys add/remove that panel
 // from the currently open overlay rather than opening a standalone
 // window -- opening the overlay for the first time if it wasn't already.
 function getPanelWin(id) {
-  return { notepad: notepadWin, toolbar: toolbarWin, scratch: scratchWin, sessions: sessionsWin, settings: settingsWin }[id];
+  return {
+    notepad: notepadWin,
+    toolbar: toolbarWin,
+    scratch: scratchWin,
+    sessions: sessionsWin
+  }[id];
 }
 
 function showPanelWindow(id) {
@@ -450,9 +428,6 @@ function showPanelWindow(id) {
       ensureSessionsWindow();
       sessionsWin.webContents.send('theme-data', settings.theme);
       wm.showAndFocus(sessionsWin);
-      break;
-    case 'settings':
-      openSettingsWindow();
       break;
   }
   applyLockState(); // in case this panel is newly created/shown while lock was already on
@@ -571,7 +546,6 @@ function registerHotkeys() {
     newSession: newGameSession,
     prevRound: () => navRound('prev'),
     nextRound: () => navRound('next'),
-    settings: () => togglePanel('settings'),
     toolbar: () => togglePanel('toolbar'),
     scratch: () => togglePanel('scratch'),
     sessions: () => togglePanel('sessions')
@@ -670,7 +644,6 @@ app.whenReady().then(async () => {
 ipcMain.on('save-note', (_event, text) => { if (session) session.saveNote(text); });
 ipcMain.on('hide-overlay', () => closeOverlay());
 ipcMain.on('nav-round', (_event, direction) => navRound(direction));
-ipcMain.on('open-settings', () => togglePanel('settings'));
 ipcMain.on('toggle-lock', () => {
   locked = !locked;
   pushLockStateToAll();
@@ -707,7 +680,6 @@ ipcMain.on('backdrop-click', () => closeOverlay());
 ipcMain.on('toolbar-open-notepad', () => { console.log('[toolbar-ipc] open-notepad received'); togglePanel('notepad'); });
 ipcMain.on('toolbar-open-scratch', () => { console.log('[toolbar-ipc] open-scratch received'); togglePanel('scratch'); });
 ipcMain.on('toolbar-open-sessions', () => { console.log('[toolbar-ipc] open-sessions received'); togglePanel('sessions'); });
-ipcMain.on('toolbar-open-settings', () => { console.log('[toolbar-ipc] open-settings received'); togglePanel('settings'); });
 ipcMain.on('toolbar-manual-round', () => { console.log('[toolbar-ipc] manual-round received'); manualNewRound(); });
 ipcMain.on('toolbar-toggle-theme', () => {
   console.log('[toolbar-ipc] toggle-theme received');
@@ -790,27 +762,8 @@ ipcMain.on('sessions-hide', () => {
 // on-screen before any "open settings" action has fired a push.
 ipcMain.handle('get-settings', () => JSON.parse(JSON.stringify(settings)));
 
-// Hides Settings the same way togglePanel('settings') would if you'd
-// pressed its hotkey again -- used by both the Close button and Save,
-// neither of which should leave a dim, empty overlay behind if Settings
-// was the only panel open.
-function closeSettingsPanel() {
-  hidePanelWindow('settings');
-  if (visiblePanels.has('settings')) {
-    visiblePanels.delete('settings');
-    if (visiblePanels.size === 0) closeOverlay();
-  }
-  // In case the theme dropdown was changed (previewed) but Settings was
-  // closed without hitting Save, snap every window back to the actually
-  // saved theme. Harmless no-op if the preview matched what's saved
-  // already, or if Settings closed via the Save button (which just
-  // re-asserts the same value it saved).
-  pushThemeToAll();
-}
- 
-
 ipcMain.on('preview-theme', (_event, theme) => {
-  console.log('[theme-preview] IPC received:', theme);
+  // console.log('[theme-preview] IPC received:', theme);
   previewThemeToAll(theme);
 });
 
@@ -836,9 +789,7 @@ ipcMain.on('save-settings', (_event, data) => {
   pushHotkeys();
   pushThemeToAll();
   if (tabCapture) tabCapture.setEnabled(settings.tabCapture.enabled);
-  closeSettingsPanel();
 });
-ipcMain.on('close-settings', () => { if (settingsWin) settingsWin.hide(); });
 
 // Fires for every quit path (tray "Quit", the toolbar's quit button,
 // Alt+F4 on a non-main window, etc.) BEFORE any window's 'close' handler
