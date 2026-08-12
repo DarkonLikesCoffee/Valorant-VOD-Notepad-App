@@ -720,13 +720,6 @@ ipcMain.on('toolbar-open-scratch', () => { console.log('[toolbar-ipc] open-scrat
 ipcMain.on('toolbar-open-sessions', () => { console.log('[toolbar-ipc] open-sessions received'); togglePanel('sessions'); });
 ipcMain.on('toolbar-open-browser', () => { console.log('[toolbar-ipc] open-browser received'); togglePanel('browser'); });
 ipcMain.on('toolbar-manual-round', () => { console.log('[toolbar-ipc] manual-round received'); manualNewRound(); });
-ipcMain.on('toolbar-toggle-theme', () => {
-  console.log('[toolbar-ipc] toggle-theme received');
-  settings.theme = settings.theme === 'dark' ? 'light' : 'dark';
-  persistSettings();
-  pushThemeToAll();
-  pushAppearance();
-});
 ipcMain.on('toolbar-close-overlay', () => { console.log('[toolbar-ipc] close-overlay received'); closeOverlay(); });
 
 // ---- IPC: main window controls ----
