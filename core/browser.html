@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"
+  >
+  <title>Browser</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: #111;
+    }
+
+    #browser-toolbar {
+      height: 46px;
+      min-height: 46px;
+
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      padding: 6px 8px;
+
+      background: #1b1b1b;
+      color: white;
+
+      -webkit-app-region: drag;
+    }
+
+    button,
+    input {
+      -webkit-app-region: no-drag;
+    }
+
+    .nav-button {
+      width: 32px;
+      height: 32px;
+
+      border: none;
+      border-radius: 6px;
+
+      background: transparent;
+      color: #ddd;
+
+      font-size: 17px;
+
+      cursor: pointer;
+    }
+
+    .nav-button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    #address-bar {
+      flex: 1;
+
+      height: 32px;
+
+      border: none;
+      outline: none;
+
+      border-radius: 7px;
+
+      padding: 0 12px;
+
+      background: #292929;
+      color: white;
+
+      font-size: 14px;
+    }
+
+    #address-bar:focus {
+      background: #333;
+    }
+
+    #close-button:hover {
+      background: rgba(255, 80, 80, 0.25);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="browser-toolbar">
+
+    <button
+      class="nav-button"
+      id="back-button"
+      title="Back">
+      ←
+    </button>
+
+    <button
+      class="nav-button"
+      id="forward-button"
+      title="Forward">
+      →
+    </button>
+
+    <button
+      class="nav-button"
+      id="reload-button"
+      title="Reload">
+      ↻
+    </button>
+
+    <input
+      id="address-bar"
+      type="text"
+      placeholder="Search or enter URL"
+      spellcheck="false"
+      autocomplete="off"
+    >
+
+    <button
+      class="nav-button"
+      id="close-button"
+      title="Close">
+      ×
+    </button>
+
+  </div>
+
+  <script src="browser-renderer.js"></script>
+
+</body>
+</html>

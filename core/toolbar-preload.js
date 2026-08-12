@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('toolbarApi', {
   openNotepad: () => { console.log('[toolbar] openNotepad clicked'); ipcRenderer.send('toolbar-open-notepad'); },
   openScratch: () => { console.log('[toolbar] openScratch clicked'); ipcRenderer.send('toolbar-open-scratch'); },
   openSessions: () => { console.log('[toolbar] openSessions clicked'); ipcRenderer.send('toolbar-open-sessions'); },
+  openBrowser: () => { console.log('[toolbar] openBrowser clicked'); ipcRenderer.send('toolbar-open-browser'); },
   openSettings: () => { console.log('[toolbar] openSettings clicked'); ipcRenderer.send('toolbar-open-settings'); },
   toggleTheme: () => { console.log('[toolbar] toggleTheme clicked'); ipcRenderer.send('toolbar-toggle-theme'); },
   toggleLock: () => { console.log('[toolbar] toggleLock clicked'); ipcRenderer.send('toggle-lock'); },

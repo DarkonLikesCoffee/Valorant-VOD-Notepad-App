@@ -6,6 +6,7 @@ const { createFloatingWindow, defaultPositionFor, clampToScreen } = require('../
 const { createToolbarWindow } = require('../../core/toolbar-window');
 const { createScratchWindow } = require('../../core/scratch-window');
 const { createSessionsWindow } = require('../../core/sessions-window');
+const { createBrowserWindow } = require('../../core/browser-window');
 const { createBackdropWindow } = require('../../core/overlay-backdrop');
 const { createMainWindow } = require('../../core/main-window');
 const { WindowManager } = require('../../core/window-manager');
@@ -40,6 +41,7 @@ let scratchWin = null;
 let sessionsWin = null;
 let backdropWin = null;
 let mainWin = null;
+let browserWin = null;
 let tray = null;
 let isQuitting = false;
 
@@ -81,7 +83,7 @@ let visiblePanels = new Set();
 // the game, same as Valorant Tracker.
 let valorantFocused = false;
 
-const PANEL_IDS = ['notepad', 'toolbar', 'scratch', 'sessions'];
+const PANEL_IDS = ['notepad', 'toolbar', 'scratch', 'sessions', 'browser'];
 
 // Guards against a window's own resize/move handler saving a bounds
 // change that WE triggered programmatically (e.g. applying a preset) --
@@ -156,7 +158,7 @@ function pushPersistState(id) {
 // TO EXTEND THIS LATER: if you ever add another panel window, just add
 // its variable to the array below -- nothing else needs to change.
 function applyLockState() {
-  [notepadWin, toolbarWin, scratchWin, sessionsWin].forEach((w) => {
+  [notepadWin, toolbarWin, scratchWin, sessionsWin, browserWin].forEach((w) => {
     if (!w) return;
     w.setMovable(!locked);
     w.setResizable(!locked);
@@ -330,6 +332,37 @@ function ensureSessionsWindow() {
   setTimeout(() => { suppressBoundsSave.sessions = false; }, 300);
 }
 
+// ---- Browser browser ----
+function ensureBrowserWindow() {
+  if (browserWin) return;
+
+  const size = {
+    width: 900,
+    height: 650
+  };
+
+  const rawPos = defaultPositionFor('center', size);
+  const pos = clampToScreen(rawPos, size);
+
+  browserWin = createBrowserWindow(size, pos);
+
+  const webView = browserWin.browserWebView;
+
+webView.webContents.on('did-navigate', (_event, url) => {
+  browserWin.webContents.send('browser-url-changed', url);
+});
+
+webView.webContents.on('did-navigate-in-page', (_event, url) => {
+  browserWin.webContents.send('browser-url-changed', url);
+});
+
+  wm.register(browserWin);
+
+  browserWin.on('closed', () => {
+    browserWin = null;
+  });
+}
+
 // ---- Main app window ----
 // The one normal, non-overlay window -- Scratch Pad and Session History
 // built in directly, plus a button into the shared Settings window.
@@ -397,7 +430,8 @@ function getPanelWin(id) {
     notepad: notepadWin,
     toolbar: toolbarWin,
     scratch: scratchWin,
-    sessions: sessionsWin
+    sessions: sessionsWin,
+    browser: browserWin
   }[id];
 }
 
@@ -424,10 +458,14 @@ function showPanelWindow(id) {
       pushPersistState('scratch');
       wm.showAndFocus(scratchWin);
       break;
-   case 'sessions':
+    case 'sessions':
       ensureSessionsWindow();
       sessionsWin.webContents.send('theme-data', settings.theme);
       wm.showAndFocus(sessionsWin);
+      break;
+    case 'browser':
+      ensureBrowserWindow();
+      wm.showAndFocus(browserWin);
       break;
   }
   applyLockState(); // in case this panel is newly created/shown while lock was already on
@@ -680,6 +718,7 @@ ipcMain.on('backdrop-click', () => closeOverlay());
 ipcMain.on('toolbar-open-notepad', () => { console.log('[toolbar-ipc] open-notepad received'); togglePanel('notepad'); });
 ipcMain.on('toolbar-open-scratch', () => { console.log('[toolbar-ipc] open-scratch received'); togglePanel('scratch'); });
 ipcMain.on('toolbar-open-sessions', () => { console.log('[toolbar-ipc] open-sessions received'); togglePanel('sessions'); });
+ipcMain.on('toolbar-open-browser', () => { console.log('[toolbar-ipc] open-browser received'); togglePanel('browser'); });
 ipcMain.on('toolbar-manual-round', () => { console.log('[toolbar-ipc] manual-round received'); manualNewRound(); });
 ipcMain.on('toolbar-toggle-theme', () => {
   console.log('[toolbar-ipc] toggle-theme received');
@@ -752,6 +791,53 @@ ipcMain.on('sessions-hide', () => {
   hidePanelWindow('sessions');
   visiblePanels.delete('sessions');
   if (visiblePanels.size === 0) closeOverlay();
+});
+
+// ---- IPC: browser ----
+ipcMain.on('browser-go-back', () => {
+  if (!browserWin) return;
+
+  const webView = browserWin.browserWebView;
+
+  if (webView && webView.webContents.canGoBack()) {
+    webView.webContents.goBack();
+  }
+});
+
+ipcMain.on('browser-go-forward', () => {
+  if (!browserWin) return;
+
+  const webView = browserWin.browserWebView;
+
+  if (webView && webView.webContents.canGoForward()) {
+    webView.webContents.goForward();
+  }
+});
+
+ipcMain.on('browser-reload', () => {
+  if (!browserWin) return;
+
+  const webView = browserWin.browserWebView;
+
+  if (webView) {
+    webView.webContents.reload();
+  }
+});
+
+ipcMain.on('browser-navigate', (_event, url) => {
+  if (!browserWin) return;
+
+  const webView = browserWin.browserWebView;
+
+  if (webView) {
+    webView.webContents.loadURL(url);
+  }
+});
+
+ipcMain.on('browser-close', () => {
+  if (!browserWin) return;
+
+  browserWin.hide();
 });
 
 // ---- IPC: settings ----
