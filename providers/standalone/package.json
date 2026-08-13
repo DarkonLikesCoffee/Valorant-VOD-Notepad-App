@@ -12,17 +12,18 @@
     "postinstall": "node scripts/rebuild-optional.js"
   },
   "dependencies": {
-    "screenshot-desktop": "^1.15.0",
     "jimp": "^0.22.12",
-    "tesseract.js": "^5.1.0",
-    "ps-list": "^7.2.0"
+    "node-window-manager": "^2.2.4",
+    "ps-list": "^7.2.0",
+    "screenshot-desktop": "^1.15.0",
+    "tesseract.js": "^5.1.0"
   },
   "optionalDependencies": {
     "active-win": "^8.2.1"
   },
   "devDependencies": {
-    "electron": "^31.0.0",
-    "@electron/rebuild": "^3.6.0"
+    "@electron/rebuild": "^3.6.0",
+    "electron": "^31.0.0"
   },
   "allowScripts": {
     "active-win@8.2.1": true,
