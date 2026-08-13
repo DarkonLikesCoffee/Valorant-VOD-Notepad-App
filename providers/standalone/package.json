@@ -9,7 +9,8 @@
   "scripts": {
     "start": "electron .",
     "calibrate": "node calibrate.js",
-    "postinstall": "patch-package && node scripts/rebuild-optional.js"
+    "postinstall": "patch-package && node scripts/rebuild-optional.js",
+    "setup": "npm install --ignore-scripts && patch-package && node node_modules/electron/install.js && node scripts/rebuild-optional.js"
   },
   "dependencies": {
     "jimp": "^0.22.12",
