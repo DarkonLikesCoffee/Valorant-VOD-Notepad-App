@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "calibrate": "node calibrate.js",
-    "postinstall": "node scripts/rebuild-optional.js"
+    "postinstall": "patch-package && node scripts/rebuild-optional.js"
   },
   "dependencies": {
     "jimp": "^0.22.12",
@@ -23,7 +23,8 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^3.6.0",
-    "electron": "^31.0.0"
+    "electron": "^31.0.0",
+    "patch-package": "^8.0.1"
   },
   "allowScripts": {
     "active-win@8.2.1": true,

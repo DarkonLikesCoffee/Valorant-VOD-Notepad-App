@@ -1,0 +1,986 @@
+diff --git a/node_modules/extract-file-icon/bin/win32-x64-125/extract-file-icon.node b/node_modules/extract-file-icon/bin/win32-x64-125/extract-file-icon.node
+new file mode 100644
+index 0000000..2f55000
+Binary files /dev/null and b/node_modules/extract-file-icon/bin/win32-x64-125/extract-file-icon.node differ
+diff --git a/node_modules/extract-file-icon/binding.gyp b/node_modules/extract-file-icon/binding.gyp
+index 7a1c7fd..e028213 100644
+--- a/node_modules/extract-file-icon/binding.gyp
++++ b/node_modules/extract-file-icon/binding.gyp
+@@ -1,35 +1,14 @@
+ {
+-  "targets": [
++  "targets":
++  [
+     {
+       "target_name": "addon", 
+-      "cflags!": [ "-fno-exceptions" ],
+-      "cflags_cc!": [ "-fno-exceptions" ],
+-      'conditions': [
+-        ['OS=="win"', {
+-          'link_settings': {
+-            'libraries': [
+-              'Gdiplus.lib',
+-            ],
+-          },
+-          'sources': [
+-            'lib/addon.cc',
+-          ],
+-        }],
+-        ['OS=="mac"', {
+-          'link_settings': {
+-            'libraries': [
+-              '-framework AppKit',
+-            ],
+-          },
+-          'sources': [
+-            'lib/addon.mm',
+-          ],
+-        }],
+-      ],
+-      "include_dirs": [
+-        "<!@(node -p \"require('node-addon-api').include\")"
+-      ],
+-      'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
++      "sources": [ "lib/addon.cc" ], 
++      "include_dirs": [ "<!@(node -p \"require('node-addon-api').include\")" ], 
++      "dependencies": [ "<!(node -p \"require('node-addon-api').gyp\")" ],
++      "defines": [ "NAPI_CPP_EXCEPTIONS" ], 
++      "msvs_settings": { "VCCLCompilerTool": { "ExceptionHandling": 1 } },
++      "libraries": [ "-lgdiplus.lib" ]
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/node_modules/extract-file-icon/build/Release/.forge-meta b/node_modules/extract-file-icon/build/Release/.forge-meta
+new file mode 100644
+index 0000000..acbab55
+--- /dev/null
++++ b/node_modules/extract-file-icon/build/Release/.forge-meta
+@@ -0,0 +1 @@
++x64--125
+\ No newline at end of file
+diff --git a/node_modules/extract-file-icon/build/Release/addon.exp b/node_modules/extract-file-icon/build/Release/addon.exp
+index 8b97a62..548bfb7 100644
+Binary files a/node_modules/extract-file-icon/build/Release/addon.exp and b/node_modules/extract-file-icon/build/Release/addon.exp differ
+diff --git a/node_modules/extract-file-icon/build/Release/addon.iobj b/node_modules/extract-file-icon/build/Release/addon.iobj
+index d941e79..2170179 100644
+Binary files a/node_modules/extract-file-icon/build/Release/addon.iobj and b/node_modules/extract-file-icon/build/Release/addon.iobj differ
+diff --git a/node_modules/extract-file-icon/build/Release/addon.ipdb b/node_modules/extract-file-icon/build/Release/addon.ipdb
+index 1434c1d..dae7b1b 100644
+Binary files a/node_modules/extract-file-icon/build/Release/addon.ipdb and b/node_modules/extract-file-icon/build/Release/addon.ipdb differ
+diff --git a/node_modules/extract-file-icon/build/Release/addon.lib b/node_modules/extract-file-icon/build/Release/addon.lib
+index 538688b..1b3d379 100644
+Binary files a/node_modules/extract-file-icon/build/Release/addon.lib and b/node_modules/extract-file-icon/build/Release/addon.lib differ
+diff --git a/node_modules/extract-file-icon/build/Release/addon.node b/node_modules/extract-file-icon/build/Release/addon.node
+index 7c87831..2f55000 100644
+Binary files a/node_modules/extract-file-icon/build/Release/addon.node and b/node_modules/extract-file-icon/build/Release/addon.node differ
+diff --git a/node_modules/extract-file-icon/build/Release/addon.pdb b/node_modules/extract-file-icon/build/Release/addon.pdb
+index 1f386a5..d92749c 100644
+Binary files a/node_modules/extract-file-icon/build/Release/addon.pdb and b/node_modules/extract-file-icon/build/Release/addon.pdb differ
+diff --git a/node_modules/extract-file-icon/build/Release/nothing.lib b/node_modules/extract-file-icon/build/Release/nothing.lib
+new file mode 100644
+index 0000000..44ac809
+Binary files /dev/null and b/node_modules/extract-file-icon/build/Release/nothing.lib differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.node.recipe b/node_modules/extract-file-icon/build/Release/obj/addon/addon.node.recipe
+index 82b33ce..e5f447b 100644
+--- a/node_modules/extract-file-icon/build/Release/obj/addon/addon.node.recipe
++++ b/node_modules/extract-file-icon/build/Release/obj/addon/addon.node.recipe
+@@ -2,7 +2,7 @@
+ <Project>
+   <ProjectOutputs>
+     <ProjectOutput>
+-      <FullPath>C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\addon.node</FullPath>
++      <FullPath>C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\addon.node</FullPath>
+     </ProjectOutput>
+   </ProjectOutputs>
+   <ContentFiles />
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.command.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.command.1.tlog
+index 2284f80..f3a58e8 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.command.1.tlog and b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.command.1.tlog differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.read.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.read.1.tlog
+index 086d869..9808af0 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.read.1.tlog and b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.read.1.tlog differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.write.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.write.1.tlog
+index 6a161ea..4dece92 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.write.1.tlog and b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/CL.write.1.tlog differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/Cl.items.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/Cl.items.tlog
+index a3270b9..52ad3cf 100644
+--- a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/Cl.items.tlog
++++ b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/Cl.items.tlog
+@@ -1,2 +1,2 @@
+-C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\lib\addon.cc;C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\obj\addon\lib\addon.obj
+-C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp\src\win_delay_load_hook.cc;C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\obj\addon\win_delay_load_hook.obj
++C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\lib\addon.cc;C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\obj\addon\lib\addon.obj
++C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron\node-gyp\src\win_delay_load_hook.cc;C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\obj\addon\win_delay_load_hook.obj
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/addon.lastbuildstate b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/addon.lastbuildstate
+index c1233f1..bb9a633 100644
+--- a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/addon.lastbuildstate
++++ b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/addon.lastbuildstate
+@@ -1,2 +1,2 @@
+-PlatformToolSet=v145:VCToolArchitecture=Native64Bit:VCToolsVersion=14.51.36231:VCServicingVersionCrtHeaders=14.51.36244:VCServicingVersionCompilers=14.51.36252:TargetPlatformVersion=10.0.26100.0:
+-Release|x64|C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\|
++PlatformToolSet=v143:VCToolArchitecture=Native64Bit:VCToolsVersion=14.44.35207:TargetPlatformVersion=10.0.26100.0:
++Release|x64|C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\|
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.command.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.command.1.tlog
+index 56f7bfd..a948413 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.command.1.tlog and b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.command.1.tlog differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.read.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.read.1.tlog
+index 12c16f9..b0db130 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.read.1.tlog and b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.read.1.tlog differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.secondary.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.secondary.1.tlog
+index a3ebcfe..a5c5f54 100644
+--- a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.secondary.1.tlog
++++ b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.secondary.1.tlog
+@@ -1,5 +1,5 @@
+-^C:\USERS\ZRDAR\APPDATA\LOCAL\TEMP\TMP-14212-VZDTGTDPVVHD\NODE_MODULES\EXTRACT-FILE-ICON\BUILD\RELEASE\OBJ\ADDON\LIB\ADDON.OBJ|C:\USERS\ZRDAR\APPDATA\LOCAL\TEMP\TMP-14212-VZDTGTDPVVHD\NODE_MODULES\EXTRACT-FILE-ICON\BUILD\RELEASE\OBJ\ADDON\WIN_DELAY_LOAD_HOOK.OBJ
+-C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\addon.LIB
+-C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\addon.EXP
+-C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\addon.IPDB
+-C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\extract-file-icon\build\Release\addon.IOBJ
++^C:\USERS\ZRDAR\DOCUMENTS\APPPPPPPPPPPPPPPPPPPPPPP\VALORANT-VOD-NOTEPAD-APP\PROVIDERS\STANDALONE\NODE_MODULES\EXTRACT-FILE-ICON\BUILD\RELEASE\NOTHING.LIB|C:\USERS\ZRDAR\DOCUMENTS\APPPPPPPPPPPPPPPPPPPPPPP\VALORANT-VOD-NOTEPAD-APP\PROVIDERS\STANDALONE\NODE_MODULES\EXTRACT-FILE-ICON\BUILD\RELEASE\OBJ\ADDON\LIB\ADDON.OBJ|C:\USERS\ZRDAR\DOCUMENTS\APPPPPPPPPPPPPPPPPPPPPPP\VALORANT-VOD-NOTEPAD-APP\PROVIDERS\STANDALONE\NODE_MODULES\EXTRACT-FILE-ICON\BUILD\RELEASE\OBJ\ADDON\WIN_DELAY_LOAD_HOOK.OBJ
++C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\addon.LIB
++C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\addon.EXP
++C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\addon.IPDB
++C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\build\Release\addon.IOBJ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.write.1.tlog b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.write.1.tlog
+index 1cd8aed..41ccb49 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.write.1.tlog and b/node_modules/extract-file-icon/build/Release/obj/addon/addon.tlog/link.write.1.tlog differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/lib/addon.obj b/node_modules/extract-file-icon/build/Release/obj/addon/lib/addon.obj
+index 79922ca..654c0a1 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/lib/addon.obj and b/node_modules/extract-file-icon/build/Release/obj/addon/lib/addon.obj differ
+diff --git a/node_modules/extract-file-icon/build/Release/obj/addon/win_delay_load_hook.obj b/node_modules/extract-file-icon/build/Release/obj/addon/win_delay_load_hook.obj
+index f61b2b3..f2f79c8 100644
+Binary files a/node_modules/extract-file-icon/build/Release/obj/addon/win_delay_load_hook.obj and b/node_modules/extract-file-icon/build/Release/obj/addon/win_delay_load_hook.obj differ
+diff --git a/node_modules/extract-file-icon/build/addon.vcxproj b/node_modules/extract-file-icon/build/addon.vcxproj
+index 4d8e2e6..8e9aae5 100644
+--- a/node_modules/extract-file-icon/build/addon.vcxproj
++++ b/node_modules/extract-file-icon/build/addon.vcxproj
+@@ -11,7 +11,7 @@
+     </ProjectConfiguration>
+   </ItemGroup>
+   <PropertyGroup Label="Globals">
+-    <ProjectGuid>{DBEB18A4-81C6-1714-F730-35EDBD288931}</ProjectGuid>
++    <ProjectGuid>{8EBBAE7F-244A-D273-FC6D-6CA56F0D096F}</ProjectGuid>
+     <Keyword>Win32Proj</Keyword>
+     <RootNamespace>addon</RootNamespace>
+     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+@@ -23,7 +23,7 @@
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+   </PropertyGroup>
+   <PropertyGroup Label="Locals">
+-    <PlatformToolset>v145</PlatformToolset>
++    <PlatformToolset>v143</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+   <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props"/>
+@@ -48,19 +48,19 @@
+   </PropertyGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+     <ClCompile>
+-      <AdditionalIncludeDirectories>C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\include\node;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\src;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\config;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\openssl\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\uv\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\zlib;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\v8\include;C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 %(AdditionalOptions)</AdditionalOptions>
++      <AdditionalIncludeDirectories>C:\Users\zrdar\.electron-gyp\31.7.7\include\node;C:\Users\zrdar\.electron-gyp\31.7.7\src;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\config;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\openssl\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\uv\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\zlib;C:\Users\zrdar\.electron-gyp\31.7.7\deps\v8\include;C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalOptions>/Zc:__cplusplus -std:c++17 %(AdditionalOptions)</AdditionalOptions>
+       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+       <BufferSecurityCheck>true</BufferSecurityCheck>
+       <DebugInformationFormat>OldStyle</DebugInformationFormat>
+       <DisableSpecificWarnings>4351;4355;4800;4251;4275;4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+-      <ExceptionHandling>false</ExceptionHandling>
++      <ExceptionHandling>Sync</ExceptionHandling>
+       <MinimalRebuild>false</MinimalRebuild>
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+       <OmitFramePointers>false</OmitFramePointers>
+       <Optimization>Disabled</Optimization>
+       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;ELECTRON_ENSURE_CONFIG_GYPI;USING_ELECTRON_CONFIG_GYPI;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_ENABLE_SANDBOX;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+       <StringPooling>true</StringPooling>
+       <SuppressStartupBanner>true</SuppressStartupBanner>
+@@ -72,7 +72,7 @@
+       <AdditionalOptions>/LTCG:INCREMENTAL %(AdditionalOptions)</AdditionalOptions>
+     </Lib>
+     <Link>
+-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;delayimp.lib;&quot;C:\\Users\\zrdar\\AppData\\Local\\node-gyp\\Cache\\24.19.0\\x64\\node.lib&quot;;Gdiplus.lib</AdditionalDependencies>
++      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;DelayImp.lib;&quot;C:\\Users\\zrdar\\.electron-gyp\\31.7.7\\x64\\node.lib&quot;;gdiplus.lib</AdditionalDependencies>
+       <AdditionalOptions>/LTCG:INCREMENTAL /ignore:4199 %(AdditionalOptions)</AdditionalOptions>
+       <DelayLoadDLLs>node.exe;%(DelayLoadDLLs)</DelayLoadDLLs>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+@@ -84,18 +84,18 @@
+       <TargetMachine>MachineX64</TargetMachine>
+     </Link>
+     <ResourceCompile>
+-      <AdditionalIncludeDirectories>C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\include\node;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\src;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\config;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\openssl\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\uv\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\zlib;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\v8\include;C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <AdditionalIncludeDirectories>C:\Users\zrdar\.electron-gyp\31.7.7\include\node;C:\Users\zrdar\.electron-gyp\31.7.7\src;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\config;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\openssl\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\uv\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\zlib;C:\Users\zrdar\.electron-gyp\31.7.7\deps\v8\include;C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;ELECTRON_ENSURE_CONFIG_GYPI;USING_ELECTRON_CONFIG_GYPI;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_ENABLE_SANDBOX;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+     </ResourceCompile>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+     <ClCompile>
+-      <AdditionalIncludeDirectories>C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\include\node;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\src;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\config;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\openssl\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\uv\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\zlib;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\v8\include;C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 %(AdditionalOptions)</AdditionalOptions>
++      <AdditionalIncludeDirectories>C:\Users\zrdar\.electron-gyp\31.7.7\include\node;C:\Users\zrdar\.electron-gyp\31.7.7\src;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\config;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\openssl\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\uv\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\zlib;C:\Users\zrdar\.electron-gyp\31.7.7\deps\v8\include;C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalOptions>/Zc:__cplusplus -std:c++17 %(AdditionalOptions)</AdditionalOptions>
+       <BufferSecurityCheck>true</BufferSecurityCheck>
+       <DebugInformationFormat>OldStyle</DebugInformationFormat>
+       <DisableSpecificWarnings>4351;4355;4800;4251;4275;4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+-      <ExceptionHandling>false</ExceptionHandling>
++      <ExceptionHandling>Sync</ExceptionHandling>
+       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+@@ -104,7 +104,7 @@
+       <OmitFramePointers>true</OmitFramePointers>
+       <Optimization>Full</Optimization>
+       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;ELECTRON_ENSURE_CONFIG_GYPI;USING_ELECTRON_CONFIG_GYPI;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_ENABLE_SANDBOX;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+       <RuntimeTypeInfo>false</RuntimeTypeInfo>
+       <StringPooling>true</StringPooling>
+@@ -117,7 +117,7 @@
+       <AdditionalOptions>/LTCG:INCREMENTAL %(AdditionalOptions)</AdditionalOptions>
+     </Lib>
+     <Link>
+-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;delayimp.lib;&quot;C:\\Users\\zrdar\\AppData\\Local\\node-gyp\\Cache\\24.19.0\\x64\\node.lib&quot;;Gdiplus.lib</AdditionalDependencies>
++      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;DelayImp.lib;&quot;C:\\Users\\zrdar\\.electron-gyp\\31.7.7\\x64\\node.lib&quot;;gdiplus.lib</AdditionalDependencies>
+       <AdditionalOptions>/LTCG:INCREMENTAL /ignore:4199 %(AdditionalOptions)</AdditionalOptions>
+       <DelayLoadDLLs>node.exe;%(DelayLoadDLLs)</DelayLoadDLLs>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+@@ -129,8 +129,8 @@
+       <TargetMachine>MachineX64</TargetMachine>
+     </Link>
+     <ResourceCompile>
+-      <AdditionalIncludeDirectories>C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\include\node;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\src;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\config;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\openssl\openssl\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\uv\include;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\zlib;C:\Users\zrdar\AppData\Local\node-gyp\Cache\24.19.0\deps\v8\include;C:\Users\zrdar\AppData\Local\Temp\tmp-14212-VzdTgtdPVvhD\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;_FILE_OFFSET_BITS=64;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <AdditionalIncludeDirectories>C:\Users\zrdar\.electron-gyp\31.7.7\include\node;C:\Users\zrdar\.electron-gyp\31.7.7\src;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\config;C:\Users\zrdar\.electron-gyp\31.7.7\deps\openssl\openssl\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\uv\include;C:\Users\zrdar\.electron-gyp\31.7.7\deps\zlib;C:\Users\zrdar\.electron-gyp\31.7.7\deps\v8\include;C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=addon;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;ELECTRON_ENSURE_CONFIG_GYPI;USING_ELECTRON_CONFIG_GYPI;V8_COMPRESS_POINTERS;V8_COMPRESS_POINTERS_IN_ISOLATE_CAGE;V8_31BIT_SMIS_ON_64BIT_ARCH;V8_ENABLE_SANDBOX;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;OPENSSL_NO_ASM;NAPI_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+     </ResourceCompile>
+   </ItemDefinitionGroup>
+   <ItemGroup>
+@@ -140,7 +140,13 @@
+     <ClCompile Include="..\lib\addon.cc">
+       <ObjectFileName>$(IntDir)\lib\addon.obj</ObjectFileName>
+     </ClCompile>
+-    <ClCompile Include="C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp\src\win_delay_load_hook.cc"/>
++    <ClCompile Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron\node-gyp\src\win_delay_load_hook.cc"/>
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="..\node_modules\node-addon-api\src\nothing.vcxproj">
++      <Project>{0E63408D-E9F3-926C-E6EC-67B6619C219C}</Project>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++    </ProjectReference>
+   </ItemGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+   <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets"/>
+diff --git a/node_modules/extract-file-icon/build/addon.vcxproj.filters b/node_modules/extract-file-icon/build/addon.vcxproj.filters
+index d3772f1..4757a10 100644
+--- a/node_modules/extract-file-icon/build/addon.vcxproj.filters
++++ b/node_modules/extract-file-icon/build/addon.vcxproj.filters
+@@ -2,45 +2,57 @@
+ <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup>
+     <Filter Include="..">
+-      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
++      <UniqueIdentifier>{739DB09A-CC57-A953-A6CF-F64FA08E4FA7}</UniqueIdentifier>
+     </Filter>
+     <Filter Include="..\lib">
+-      <UniqueIdentifier>{9E038509-6CF8-00F6-D19C-D788E2A0B03B}</UniqueIdentifier>
++      <UniqueIdentifier>{2739B19F-16DF-601C-060A-FF86F6A40045}</UniqueIdentifier>
+     </Filter>
+     <Filter Include="C:">
+-      <UniqueIdentifier>{F87FD356-0FEB-9BC5-D1FA-368C81420008}</UniqueIdentifier>
++      <UniqueIdentifier>{7B735499-E5DD-1C2B-6C26-70023832A1CF}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files">
+-      <UniqueIdentifier>{079DC0E4-AD6C-4C65-66EB-07165C6B1514}</UniqueIdentifier>
++    <Filter Include="C:\Users">
++      <UniqueIdentifier>{E9F714C1-DA89-54E2-60CF-39FEB20BF756}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files\nodejs">
+-      <UniqueIdentifier>{0A3FFDD3-2934-8FBC-476C-39417892CCA6}</UniqueIdentifier>
++    <Filter Include="C:\Users\zrdar">
++      <UniqueIdentifier>{6F19B136-F591-4183-87A2-2F6E653E3F1B}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files\nodejs\node_modules">
+-      <UniqueIdentifier>{126A39EA-1D28-5689-C126-0DA0AB5837A0}</UniqueIdentifier>
++    <Filter Include="C:\Users\zrdar\Documents">
++      <UniqueIdentifier>{87566BA0-CA33-1144-65F5-087C5F9D6C20}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files\nodejs\node_modules\npm">
+-      <UniqueIdentifier>{E6F3EBE6-A3A6-AA7E-34C1-5CE4364854E4}</UniqueIdentifier>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP">
++      <UniqueIdentifier>{2DCC609D-CCAC-F870-410B-50D4E42AF952}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files\nodejs\node_modules\npm\node_modules">
+-      <UniqueIdentifier>{126A39EA-1D28-5689-C126-0DA0AB5837A0}</UniqueIdentifier>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App">
++      <UniqueIdentifier>{D8A1E890-49C4-C667-DFF9-EFA28C369308}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp">
+-      <UniqueIdentifier>{49558BB4-6D34-CA91-A65D-85A65792DC11}</UniqueIdentifier>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers">
++      <UniqueIdentifier>{AE203FF6-4668-A2A4-397B-16A737A688D1}</UniqueIdentifier>
+     </Filter>
+-    <Filter Include="C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp\src">
+-      <UniqueIdentifier>{F1003AD6-4B6D-45DF-3F56-5CAC869BF55E}</UniqueIdentifier>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone">
++      <UniqueIdentifier>{E529F629-8159-64C4-6151-8C2503D187A8}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules">
++      <UniqueIdentifier>{56DF7A98-063D-FB9D-485C-089023B4C16A}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron">
++      <UniqueIdentifier>{6FD122B1-87CE-5BE7-127F-692B6E499EA3}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron\node-gyp">
++      <UniqueIdentifier>{77348C0E-2034-7791-74D5-63C077DF5A3B}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron\node-gyp\src">
++      <UniqueIdentifier>{8CDEE807-BC53-E450-C8B8-4DEBB66742D4}</UniqueIdentifier>
+     </Filter>
+     <Filter Include="..">
+-      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
++      <UniqueIdentifier>{739DB09A-CC57-A953-A6CF-F64FA08E4FA7}</UniqueIdentifier>
+     </Filter>
+   </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\lib\addon.cc">
+       <Filter>..\lib</Filter>
+     </ClCompile>
+-    <ClCompile Include="C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp\src\win_delay_load_hook.cc">
+-      <Filter>C:\Program Files\nodejs\node_modules\npm\node_modules\node-gyp\src</Filter>
++    <ClCompile Include="C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron\node-gyp\src\win_delay_load_hook.cc">
++      <Filter>C:\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\@electron\node-gyp\src</Filter>
+     </ClCompile>
+     <None Include="..\binding.gyp">
+       <Filter>..</Filter>
+diff --git a/node_modules/extract-file-icon/build/binding.sln b/node_modules/extract-file-icon/build/binding.sln
+index 5b0850b..201d9eb 100644
+--- a/node_modules/extract-file-icon/build/binding.sln
++++ b/node_modules/extract-file-icon/build/binding.sln
+@@ -1,6 +1,35 @@
+ Microsoft Visual Studio Solution File, Format Version 12.00
+ # Visual Studio 2015
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "addon", "addon.vcxproj", "{DBEB18A4-81C6-1714-F730-35EDBD288931}"
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "addon", "addon.vcxproj", "{8EBBAE7F-244A-D273-FC6D-6CA56F0D096F}"
++	ProjectSection(ProjectDependencies) = postProject
++		{0E63408D-E9F3-926C-E6EC-67B6619C219C} = {0E63408D-E9F3-926C-E6EC-67B6619C219C}
++	EndProjectSection
++EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nothing", "..\node_modules\node-addon-api\src\nothing.vcxproj", "{0E63408D-E9F3-926C-E6EC-67B6619C219C}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(Users)", "..\Users", "{83FD2216-DE8C-3729-D4EA-3618B14F3F2D}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(zrdar)", "..\Users\zrdar", "{CB17D5F3-F3E0-3213-79C8-1E6E57C82F79}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(Documents)", "..\Users\zrdar\Documents", "{DAB95949-FBA2-D097-2D3B-A5322C02D618}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(APPPPPPPPPPPPPPPPPPPPPPP)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP", "{F36DDD5D-10AB-79F7-1298-7530D0813FD8}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(Valorant-VOD-Notepad-App)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App", "{B54AD1B6-7C6C-4871-7E06-3EF7A920DFE8}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(providers)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers", "{9589D533-4BBF-85A9-C019-2E363DE41A29}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(standalone)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone", "{CE1D2C02-72EA-EAF4-DE69-8902AF0172FB}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node_modules)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules", "{04E1545B-5971-0FE4-C778-D3EC631ECF97}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(extract-file-icon)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon", "{5E29B3F0-E4C0-2C04-063C-A40FE4260D52}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node_modules)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules", "{3E462891-9730-3759-BD9E-A5A1BBB5E50E}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node-addon-api)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules\node-addon-api", "{4F2E0467-9A95-46BF-B71E-1A895B7B61F0}"
++EndProject
++Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(src)", "..\Users\zrdar\Documents\APPPPPPPPPPPPPPPPPPPPPPP\Valorant-VOD-Notepad-App\providers\standalone\node_modules\extract-file-icon\node_modules\node-addon-api\src", "{D2AFEAD8-3292-5A93-E1AE-44851E3AE3CE}"
+ EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+@@ -8,12 +37,30 @@ Global
+ 		Release|x64 = Release|x64
+ 	EndGlobalSection
+ 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+-		{DBEB18A4-81C6-1714-F730-35EDBD288931}.Debug|x64.ActiveCfg = Debug|x64
+-		{DBEB18A4-81C6-1714-F730-35EDBD288931}.Debug|x64.Build.0 = Debug|x64
+-		{DBEB18A4-81C6-1714-F730-35EDBD288931}.Release|x64.ActiveCfg = Release|x64
+-		{DBEB18A4-81C6-1714-F730-35EDBD288931}.Release|x64.Build.0 = Release|x64
++		{0E63408D-E9F3-926C-E6EC-67B6619C219C}.Debug|x64.ActiveCfg = Debug|x64
++		{0E63408D-E9F3-926C-E6EC-67B6619C219C}.Debug|x64.Build.0 = Debug|x64
++		{0E63408D-E9F3-926C-E6EC-67B6619C219C}.Release|x64.ActiveCfg = Release|x64
++		{0E63408D-E9F3-926C-E6EC-67B6619C219C}.Release|x64.Build.0 = Release|x64
++		{8EBBAE7F-244A-D273-FC6D-6CA56F0D096F}.Debug|x64.ActiveCfg = Debug|x64
++		{8EBBAE7F-244A-D273-FC6D-6CA56F0D096F}.Debug|x64.Build.0 = Debug|x64
++		{8EBBAE7F-244A-D273-FC6D-6CA56F0D096F}.Release|x64.ActiveCfg = Release|x64
++		{8EBBAE7F-244A-D273-FC6D-6CA56F0D096F}.Release|x64.Build.0 = Release|x64
+ 	EndGlobalSection
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+ 	EndGlobalSection
++	GlobalSection(NestedProjects) = preSolution
++		{CB17D5F3-F3E0-3213-79C8-1E6E57C82F79} = {83FD2216-DE8C-3729-D4EA-3618B14F3F2D}
++		{DAB95949-FBA2-D097-2D3B-A5322C02D618} = {CB17D5F3-F3E0-3213-79C8-1E6E57C82F79}
++		{F36DDD5D-10AB-79F7-1298-7530D0813FD8} = {DAB95949-FBA2-D097-2D3B-A5322C02D618}
++		{B54AD1B6-7C6C-4871-7E06-3EF7A920DFE8} = {F36DDD5D-10AB-79F7-1298-7530D0813FD8}
++		{9589D533-4BBF-85A9-C019-2E363DE41A29} = {B54AD1B6-7C6C-4871-7E06-3EF7A920DFE8}
++		{CE1D2C02-72EA-EAF4-DE69-8902AF0172FB} = {9589D533-4BBF-85A9-C019-2E363DE41A29}
++		{04E1545B-5971-0FE4-C778-D3EC631ECF97} = {CE1D2C02-72EA-EAF4-DE69-8902AF0172FB}
++		{5E29B3F0-E4C0-2C04-063C-A40FE4260D52} = {04E1545B-5971-0FE4-C778-D3EC631ECF97}
++		{3E462891-9730-3759-BD9E-A5A1BBB5E50E} = {5E29B3F0-E4C0-2C04-063C-A40FE4260D52}
++		{4F2E0467-9A95-46BF-B71E-1A895B7B61F0} = {3E462891-9730-3759-BD9E-A5A1BBB5E50E}
++		{D2AFEAD8-3292-5A93-E1AE-44851E3AE3CE} = {4F2E0467-9A95-46BF-B71E-1A895B7B61F0}
++		{0E63408D-E9F3-926C-E6EC-67B6619C219C} = {D2AFEAD8-3292-5A93-E1AE-44851E3AE3CE}
++	EndGlobalSection
+ EndGlobal
+diff --git a/node_modules/extract-file-icon/build/config.gypi b/node_modules/extract-file-icon/build/config.gypi
+index 08beae9..1b62d27 100644
+--- a/node_modules/extract-file-icon/build/config.gypi
++++ b/node_modules/extract-file-icon/build/config.gypi
+@@ -1,48 +1,51 @@
+ # Do not edit. File was generated by node-gyp's "configure" step
+ {
++  "target_defaults": {
++    "cflags": [],
++    "default_configuration": "Release",
++    "defines": [],
++    "include_dirs": [],
++    "libraries": [],
++    "msbuild_toolset": "v143",
++    "msvs_windows_target_platform_version": "10.0.26100.0"
++  },
+   "variables": {
+-    "use_ccache_win": 0,
+-    "clang": 0,
+-    "llvm_version": "19.1.5",
+-    "nasm_version": "3.02",
+-    "node_enable_experimentals": "false",
+-    "node_prefix": "\\usr\\local",
+-    "node_install_npm": "true",
+-    "node_install_corepack": "true",
+-    "control_flow_guard": "false",
+-    "node_use_amaro": "true",
++    "arm_fpu": "neon",
++    "asan": 0,
++    "build_v8_with_gn": "false",
++    "built_with_electron": 1,
++    "coverage": "false",
++    "dcheck_always_on": 0,
++    "debug_nghttp2": "false",
+     "debug_node": "false",
+-    "debug_symbols": "false",
++    "enable_lto": "false",
++    "enable_pgo_generate": "false",
++    "enable_pgo_use": "false",
+     "error_on_warn": "false",
+-    "suppress_all_error_on_warn": "false",
+-    "use_prefix_to_find_headers": "false",
++    "force_dynamic_crt": 0,
+     "host_arch": "x64",
+-    "target_arch": "x64",
++    "icu_data_in": "..\\..\\deps\\icu-tmp\\icudt75l.dat",
++    "icu_endianness": "l",
++    "icu_gyp_path": "tools/icu/icu-generic.gyp",
++    "icu_path": "deps/icu-small",
++    "icu_small": "false",
++    "icu_ver_major": "75",
++    "is_debug": 0,
++    "libdir": "lib",
++    "llvm_version": "0.0",
++    "napi_build_version": "9",
++    "node_builtin_shareable_builtins": [
++      "deps/cjs-module-lexer/lexer.js",
++      "deps/cjs-module-lexer/dist/lexer.js",
++      "deps/undici/undici.js"
++    ],
+     "node_byteorder": "little",
+-    "want_separate_host_toolset": 0,
+-    "node_use_node_snapshot": "true",
+-    "node_use_node_code_cache": "true",
+-    "node_write_snapshot_as_array_literals": "true",
+-    "node_enable_v8_vtunejit": "false",
+-    "enable_pgo_generate": "false",
+-    "enable_pgo_use": "false",
+-    "enable_lto": "false",
+-    "enable_thin_lto": "false",
+-    "single_executable_application": "true",
+-    "node_with_ltcg": "true",
+-    "node_tag": "",
+-    "node_release_urlbase": "https://nodejs.org/download/release/",
+     "node_debug_lib": "false",
+-    "debug_nghttp2": "false",
+-    "node_no_browser_globals": "false",
+-    "node_shared": "false",
+-    "libdir": "lib",
+-    "node_module_version": 137,
+-    "shlib_suffix": "so.137",
+-    "asan": 0,
+-    "ubsan": 0,
+-    "coverage": "false",
+-    "node_target_type": "executable",
++    "node_enable_d8": "false",
++    "node_enable_v8_vtunejit": "false",
++    "node_fipsinstall": "false",
++    "node_install_corepack": "true",
++    "node_install_npm": "true",
+     "node_library_files": [
+       "lib/_http_agent.js",
+       "lib/_http_client.js",
+@@ -84,12 +87,8 @@
+       "lib/internal/assert.js",
+       "lib/internal/assert/assertion_error.js",
+       "lib/internal/assert/calltracker.js",
+-      "lib/internal/assert/myers_diff.js",
+       "lib/internal/assert/utils.js",
+-      "lib/internal/async_context_frame.js",
+       "lib/internal/async_hooks.js",
+-      "lib/internal/async_local_storage/async_context_frame.js",
+-      "lib/internal/async_local_storage/async_hooks.js",
+       "lib/internal/blob.js",
+       "lib/internal/blocklist.js",
+       "lib/internal/bootstrap/node.js",
+@@ -115,22 +114,17 @@
+       "lib/internal/console/global.js",
+       "lib/internal/constants.js",
+       "lib/internal/crypto/aes.js",
+-      "lib/internal/crypto/argon2.js",
+       "lib/internal/crypto/certificate.js",
+       "lib/internal/crypto/cfrg.js",
+-      "lib/internal/crypto/chacha20_poly1305.js",
+       "lib/internal/crypto/cipher.js",
+       "lib/internal/crypto/diffiehellman.js",
+       "lib/internal/crypto/ec.js",
+       "lib/internal/crypto/hash.js",
+       "lib/internal/crypto/hashnames.js",
+       "lib/internal/crypto/hkdf.js",
+-      "lib/internal/crypto/kem.js",
+       "lib/internal/crypto/keygen.js",
+       "lib/internal/crypto/keys.js",
+       "lib/internal/crypto/mac.js",
+-      "lib/internal/crypto/ml_dsa.js",
+-      "lib/internal/crypto/ml_kem.js",
+       "lib/internal/crypto/pbkdf2.js",
+       "lib/internal/crypto/random.js",
+       "lib/internal/crypto/rsa.js",
+@@ -138,25 +132,18 @@
+       "lib/internal/crypto/sig.js",
+       "lib/internal/crypto/util.js",
+       "lib/internal/crypto/webcrypto.js",
+-      "lib/internal/crypto/webcrypto_util.js",
+       "lib/internal/crypto/webidl.js",
+       "lib/internal/crypto/x509.js",
+-      "lib/internal/data_url.js",
+       "lib/internal/debugger/inspect.js",
+       "lib/internal/debugger/inspect_client.js",
+-      "lib/internal/debugger/inspect_helpers.js",
+-      "lib/internal/debugger/inspect_probe.js",
+       "lib/internal/debugger/inspect_repl.js",
+       "lib/internal/dgram.js",
+       "lib/internal/dns/callback_resolver.js",
+       "lib/internal/dns/promises.js",
+       "lib/internal/dns/utils.js",
+       "lib/internal/encoding.js",
+-      "lib/internal/encoding/single-byte.js",
+-      "lib/internal/encoding/util.js",
+       "lib/internal/error_serdes.js",
+       "lib/internal/errors.js",
+-      "lib/internal/errors/error_source.js",
+       "lib/internal/event_target.js",
+       "lib/internal/events/abort_listener.js",
+       "lib/internal/events/symbols.js",
+@@ -167,7 +154,6 @@
+       "lib/internal/fs/cp/cp-sync.js",
+       "lib/internal/fs/cp/cp.js",
+       "lib/internal/fs/dir.js",
+-      "lib/internal/fs/glob.js",
+       "lib/internal/fs/promises.js",
+       "lib/internal/fs/read/context.js",
+       "lib/internal/fs/recursive_watch.js",
+@@ -182,18 +168,12 @@
+       "lib/internal/http2/compat.js",
+       "lib/internal/http2/core.js",
+       "lib/internal/http2/util.js",
+-      "lib/internal/inspector/network.js",
+-      "lib/internal/inspector/network_http.js",
+-      "lib/internal/inspector/network_http2.js",
+-      "lib/internal/inspector/network_resources.js",
+-      "lib/internal/inspector/network_undici.js",
+-      "lib/internal/inspector/webstorage.js",
++      "lib/internal/idna.js",
+       "lib/internal/inspector_async_hook.js",
+       "lib/internal/inspector_network_tracking.js",
+       "lib/internal/js_stream_socket.js",
+       "lib/internal/legacy/processbinding.js",
+       "lib/internal/linkedlist.js",
+-      "lib/internal/locks.js",
+       "lib/internal/main/check_syntax.js",
+       "lib/internal/main/embedding.js",
+       "lib/internal/main/eval_stdin.js",
+@@ -209,9 +189,10 @@
+       "lib/internal/main/worker_thread.js",
+       "lib/internal/mime.js",
+       "lib/internal/modules/cjs/loader.js",
+-      "lib/internal/modules/customization_hooks.js",
+       "lib/internal/modules/esm/assert.js",
+       "lib/internal/modules/esm/create_dynamic_module.js",
++      "lib/internal/modules/esm/fetch_module.js",
++      "lib/internal/modules/esm/formats.js",
+       "lib/internal/modules/esm/get_format.js",
+       "lib/internal/modules/esm/hooks.js",
+       "lib/internal/modules/esm/initialize_import_meta.js",
+@@ -219,6 +200,7 @@
+       "lib/internal/modules/esm/loader.js",
+       "lib/internal/modules/esm/module_job.js",
+       "lib/internal/modules/esm/module_map.js",
++      "lib/internal/modules/esm/package_config.js",
+       "lib/internal/modules/esm/resolve.js",
+       "lib/internal/modules/esm/shared_constants.js",
+       "lib/internal/modules/esm/translators.js",
+@@ -227,7 +209,6 @@
+       "lib/internal/modules/helpers.js",
+       "lib/internal/modules/package_json_reader.js",
+       "lib/internal/modules/run_main.js",
+-      "lib/internal/modules/typescript.js",
+       "lib/internal/navigator.js",
+       "lib/internal/net.js",
+       "lib/internal/options.js",
+@@ -244,11 +225,13 @@
+       "lib/internal/perf/timerify.js",
+       "lib/internal/perf/usertiming.js",
+       "lib/internal/perf/utils.js",
++      "lib/internal/policy/manifest.js",
++      "lib/internal/policy/sri.js",
+       "lib/internal/priority_queue.js",
+       "lib/internal/process/execution.js",
+-      "lib/internal/process/finalization.js",
+       "lib/internal/process/per_thread.js",
+       "lib/internal/process/permission.js",
++      "lib/internal/process/policy.js",
+       "lib/internal/process/pre_execution.js",
+       "lib/internal/process/promises.js",
+       "lib/internal/process/report.js",
+@@ -258,10 +241,6 @@
+       "lib/internal/process/worker_thread_only.js",
+       "lib/internal/promise_hooks.js",
+       "lib/internal/querystring.js",
+-      "lib/internal/quic/quic.js",
+-      "lib/internal/quic/state.js",
+-      "lib/internal/quic/stats.js",
+-      "lib/internal/quic/symbols.js",
+       "lib/internal/readline/callbacks.js",
+       "lib/internal/readline/emitKeypressEvents.js",
+       "lib/internal/readline/interface.js",
+@@ -269,7 +248,6 @@
+       "lib/internal/readline/utils.js",
+       "lib/internal/repl.js",
+       "lib/internal/repl/await.js",
+-      "lib/internal/repl/completion.js",
+       "lib/internal/repl/history.js",
+       "lib/internal/repl/utils.js",
+       "lib/internal/socket_list.js",
+@@ -277,7 +255,6 @@
+       "lib/internal/source_map/prepare_stack_trace.js",
+       "lib/internal/source_map/source_map.js",
+       "lib/internal/source_map/source_map_cache.js",
+-      "lib/internal/source_map/source_map_cache_map.js",
+       "lib/internal/stream_base_commons.js",
+       "lib/internal/streams/add-abort-signal.js",
+       "lib/internal/streams/compose.js",
+@@ -286,7 +263,6 @@
+       "lib/internal/streams/duplexify.js",
+       "lib/internal/streams/duplexpair.js",
+       "lib/internal/streams/end-of-stream.js",
+-      "lib/internal/streams/fast-utf8-stream.js",
+       "lib/internal/streams/from.js",
+       "lib/internal/streams/lazy_transform.js",
+       "lib/internal/streams/legacy.js",
+@@ -300,7 +276,6 @@
+       "lib/internal/streams/writable.js",
+       "lib/internal/test/binding.js",
+       "lib/internal/test/transfer.js",
+-      "lib/internal/test_runner/assert.js",
+       "lib/internal/test_runner/coverage.js",
+       "lib/internal/test_runner/harness.js",
+       "lib/internal/test_runner/mock/loader.js",
+@@ -309,21 +284,17 @@
+       "lib/internal/test_runner/reporter/dot.js",
+       "lib/internal/test_runner/reporter/junit.js",
+       "lib/internal/test_runner/reporter/lcov.js",
+-      "lib/internal/test_runner/reporter/rerun.js",
+       "lib/internal/test_runner/reporter/spec.js",
+       "lib/internal/test_runner/reporter/tap.js",
+       "lib/internal/test_runner/reporter/utils.js",
+       "lib/internal/test_runner/reporter/v8-serializer.js",
+       "lib/internal/test_runner/runner.js",
+-      "lib/internal/test_runner/snapshot.js",
+-      "lib/internal/test_runner/tag_filter.js",
+       "lib/internal/test_runner/test.js",
+       "lib/internal/test_runner/tests_stream.js",
+       "lib/internal/test_runner/utils.js",
+       "lib/internal/timers.js",
+-      "lib/internal/tls/common.js",
+       "lib/internal/tls/secure-context.js",
+-      "lib/internal/tls/wrap.js",
++      "lib/internal/tls/secure-pair.js",
+       "lib/internal/trace_events_async_hooks.js",
+       "lib/internal/tty.js",
+       "lib/internal/url.js",
+@@ -331,15 +302,16 @@
+       "lib/internal/util/colors.js",
+       "lib/internal/util/comparisons.js",
+       "lib/internal/util/debuglog.js",
+-      "lib/internal/util/diff.js",
++      "lib/internal/util/embedding.js",
+       "lib/internal/util/inspect.js",
+       "lib/internal/util/inspector.js",
++      "lib/internal/util/iterable_weak_map.js",
+       "lib/internal/util/parse_args/parse_args.js",
+       "lib/internal/util/parse_args/utils.js",
+-      "lib/internal/util/trace_sigint.js",
+       "lib/internal/util/types.js",
+       "lib/internal/v8/startup_snapshot.js",
+       "lib/internal/v8_prof_polyfill.js",
++      "lib/internal/v8_prof_processor.js",
+       "lib/internal/validators.js",
+       "lib/internal/vm.js",
+       "lib/internal/vm/module.js",
+@@ -347,7 +319,6 @@
+       "lib/internal/watch_mode/files_watcher.js",
+       "lib/internal/watchdog.js",
+       "lib/internal/webidl.js",
+-      "lib/internal/webstorage.js",
+       "lib/internal/webstreams/adapters.js",
+       "lib/internal/webstreams/compression.js",
+       "lib/internal/webstreams/encoding.js",
+@@ -358,10 +329,8 @@
+       "lib/internal/webstreams/util.js",
+       "lib/internal/webstreams/writablestream.js",
+       "lib/internal/worker.js",
+-      "lib/internal/worker/clone_dom_exception.js",
+       "lib/internal/worker/io.js",
+       "lib/internal/worker/js_transferable.js",
+-      "lib/internal/worker/messaging.js",
+       "lib/module.js",
+       "lib/net.js",
+       "lib/os.js",
+@@ -372,12 +341,10 @@
+       "lib/process.js",
+       "lib/punycode.js",
+       "lib/querystring.js",
+-      "lib/quic.js",
+       "lib/readline.js",
+       "lib/readline/promises.js",
+       "lib/repl.js",
+       "lib/sea.js",
+-      "lib/sqlite.js",
+       "lib/stream.js",
+       "lib/stream/consumers.js",
+       "lib/stream/promises.js",
+@@ -400,144 +367,84 @@
+       "lib/worker_threads.js",
+       "lib/zlib.js"
+     ],
+-    "node_cctest_sources": [
+-      "test/cctest/inspector/test_network_requests_buffer.cc",
+-      "test/cctest/inspector/test_node_protocol.cc",
+-      "test/cctest/node_test_fixture.cc",
+-      "test/cctest/test_aliased_buffer.cc",
+-      "test/cctest/test_base64.cc",
+-      "test/cctest/test_base_object_ptr.cc",
+-      "test/cctest/test_cppgc.cc",
+-      "test/cctest/test_crypto_clienthello.cc",
+-      "test/cctest/test_dataqueue.cc",
+-      "test/cctest/test_diagnostics_channel.cc",
+-      "test/cctest/test_environment.cc",
+-      "test/cctest/test_inspector_socket.cc",
+-      "test/cctest/test_inspector_socket_server.cc",
+-      "test/cctest/test_json_utils.cc",
+-      "test/cctest/test_linked_binding.cc",
+-      "test/cctest/test_lru_cache.cc",
+-      "test/cctest/test_node_api.cc",
+-      "test/cctest/test_node_crypto.cc",
+-      "test/cctest/test_node_crypto_env.cc",
+-      "test/cctest/test_node_ipc_serdes.cc",
+-      "test/cctest/test_node_postmortem_metadata.cc",
+-      "test/cctest/test_node_task_runner.cc",
+-      "test/cctest/test_path.cc",
+-      "test/cctest/test_per_process.cc",
+-      "test/cctest/test_platform.cc",
+-      "test/cctest/test_quic_arena.cc",
+-      "test/cctest/test_quic_cid.cc",
+-      "test/cctest/test_quic_error.cc",
+-      "test/cctest/test_quic_preferredaddress.cc",
+-      "test/cctest/test_quic_tokens.cc",
+-      "test/cctest/test_report.cc",
+-      "test/cctest/test_sockaddr.cc",
+-      "test/cctest/test_string_bytes.cc",
+-      "test/cctest/test_traced_value.cc",
+-      "test/cctest/test_util.cc",
+-      "test/cctest/node_test_fixture.h"
+-    ],
+-    "napi_build_version": "10",
+-    "node_shared_zlib": "false",
+-    "node_shared_http_parser": "false",
+-    "node_shared_libuv": "false",
++    "node_module_version": 125,
++    "node_no_browser_globals": "false",
++    "node_prefix": "\\usr\\local",
++    "node_release_urlbase": "",
++    "node_shared": "false",
+     "node_shared_ada": "false",
+-    "node_shared_simdjson": "false",
+-    "node_shared_simdutf": "false",
+     "node_shared_brotli": "false",
+     "node_shared_cares": "false",
+-    "node_shared_gtest": "false",
+-    "node_shared_hdr_histogram": "false",
+-    "node_shared_merve": "false",
+-    "node_shared_nbytes": "false",
++    "node_shared_http_parser": "false",
++    "node_shared_libuv": "false",
+     "node_shared_nghttp2": "false",
+     "node_shared_nghttp3": "false",
+     "node_shared_ngtcp2": "false",
+-    "node_use_sqlite": "true",
+-    "node_shared_sqlite": "false",
++    "node_shared_openssl": "false",
++    "node_shared_simdjson": "false",
++    "node_shared_simdutf": "false",
+     "node_shared_uvwasi": "false",
+-    "node_shared_zstd": "false",
+-    "v8_enable_webassembly": 1,
+-    "v8_enable_javascript_promise_hooks": 1,
+-    "v8_enable_lite_mode": 0,
+-    "v8_enable_gdbjit": 0,
+-    "v8_optimized_debug": 1,
+-    "dcheck_always_on": 0,
+-    "v8_enable_object_print": 1,
+-    "v8_random_seed": 0,
+-    "v8_promise_internal_field_count": 1,
+-    "v8_use_siphash": 1,
+-    "v8_enable_maglev": 1,
+-    "v8_enable_pointer_compression": 0,
+-    "v8_enable_sandbox": 0,
+-    "v8_enable_pointer_compression_shared_cage": 0,
+-    "v8_enable_external_code_space": 0,
+-    "v8_enable_31bit_smis_on_64bit_arch": 0,
+-    "v8_enable_extensible_ro_snapshot": 0,
+-    "v8_trace_maps": 0,
+-    "node_use_v8_platform": "true",
++    "node_shared_zlib": "false",
++    "node_tag": "",
++    "node_target_type": "executable",
+     "node_use_bundled_v8": "true",
+-    "force_dynamic_crt": 0,
+-    "node_enable_d8": "false",
+-    "node_enable_v8windbg": "false",
+-    "v8_enable_hugepage": 0,
+-    "v8_enable_short_builtin_calls": 1,
+-    "v8_enable_wasm_simd256_revec": 1,
++    "node_use_node_code_cache": "false",
++    "node_use_node_snapshot": "false",
+     "node_use_openssl": "true",
+-    "node_shared_openssl": "false",
+-    "openssl_is_fips": "false",
+-    "node_fipsinstall": "false",
++    "node_use_v8_platform": "true",
++    "node_with_ltcg": "true",
+     "node_without_node_options": "false",
+-    "node_use_quic": "false",
+-    "icu_small": "false",
++    "node_write_snapshot_as_array_literals": "true",
++    "openssl_is_fips": "false",
++    "openssl_no_asm": 1,
++    "openssl_quic": "true",
++    "ossfuzz": "false",
++    "shlib_suffix": "so.115",
++    "single_executable_application": "true",
++    "target_arch": "x64",
++    "ubsan": 0,
++    "use_prefix_to_find_headers": "false",
++    "using_electron_config_gypi": 1,
++    "v8_enable_31bit_smis_on_64bit_arch": 1,
++    "v8_enable_extensible_ro_snapshot": 0,
++    "v8_enable_gdbjit": 0,
++    "v8_enable_hugepage": 0,
+     "v8_enable_i18n_support": 1,
+-    "icu_gyp_path": "tools/icu/icu-generic.gyp",
+-    "icu_path": "deps/icu-small",
+-    "icu_ver_major": "78",
+-    "icu_endianness": "l",
+-    "icu_data_in": "..\\..\\deps\\icu-tmp\\icudt78l.dat",
+     "v8_enable_inspector": 1,
+-    "node_builtin_shareable_builtins": [
+-      "deps/undici/undici.js",
+-      "deps/amaro/dist/index.js"
+-    ],
+-    "ossfuzz": "false",
+-    "nodedir": "C:\\Users\\zrdar\\AppData\\Local\\node-gyp\\Cache\\24.19.0",
++    "v8_enable_javascript_promise_hooks": 1,
++    "v8_enable_lite_mode": 0,
++    "v8_enable_maglev": 0,
++    "v8_enable_object_print": 1,
++    "v8_enable_pointer_compression": 1,
++    "v8_enable_sandbox": 1,
++    "v8_enable_shared_ro_heap": 0,
++    "v8_enable_v8_checks": 0,
++    "v8_enable_webassembly": 1,
++    "v8_no_strict_aliasing": 1,
++    "v8_optimized_debug": 1,
++    "v8_promise_internal_field_count": 1,
++    "v8_random_seed": 0,
++    "v8_trace_maps": 0,
++    "v8_use_siphash": 1,
++    "want_separate_host_toolset": 1,
++    "nodedir": "C:\\Users\\zrdar\\.electron-gyp\\31.7.7",
+     "python": "C:\\Users\\zrdar\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+     "standalone_static_library": 1,
+-    "msbuild_path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe",
+-    "user_agent": "npm/11.17.0 node/v24.19.0 win32 x64 workspaces/false",
+-    "userconfig": "C:\\Users\\zrdar\\.npmrc",
+-    "prefix": "C:\\Users\\zrdar\\AppData\\Roaming\\npm",
+-    "npm_version": "11.17.0",
+-    "node_gyp": "C:\\Program Files\\nodejs\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node-gyp.js",
+-    "local_prefix": "C:\\Users\\zrdar\\AppData\\Local\\Temp\\tmp-14212-VzdTgtdPVvhD\\node_modules\\extract-file-icon",
+-    "init_module": "C:\\Users\\zrdar\\.npm-init.js",
+-    "global_prefix": "C:\\Users\\zrdar\\AppData\\Roaming\\npm",
+-    "globalconfig": "C:\\Users\\zrdar\\AppData\\Roaming\\npm\\etc\\npmrc",
+-    "force": "true",
+-    "engine_strict": "true",
++    "msbuild_path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe",
++    "runtime": "electron",
++    "target": "31.7.7",
++    "build_from_source": "true",
++    "allow_scripts": "",
+     "cache": "C:\\Users\\zrdar\\AppData\\Local\\npm-cache",
+-    "allow_scripts": ""
+-  },
+-  "target_defaults": {
+-    "include_dirs": [],
+-    "libraries": [],
+-    "defines": [],
+-    "cflags": [],
+-    "default_configuration": "Release",
+-    "configurations": {
+-      "Release": {
+-        "variables": {},
+-        "v8_enable_v8_checks": 0
+-      },
+-      "Debug": {
+-        "variables": {},
+-        "v8_enable_v8_checks": 1
+-      }
+-    },
+-    "msbuild_toolset": "v145",
+-    "msvs_windows_target_platform_version": "10.0.26100.0"
++    "engine_strict": "true",
++    "globalconfig": "C:\\Users\\zrdar\\AppData\\Roaming\\npm\\etc\\npmrc",
++    "global_prefix": "C:\\Users\\zrdar\\AppData\\Roaming\\npm",
++    "init_module": "C:\\Users\\zrdar\\.npm-init.js",
++    "local_prefix": "C:\\Users\\zrdar\\Documents\\APPPPPPPPPPPPPPPPPPPPPPP\\Valorant-VOD-Notepad-App\\providers\\standalone",
++    "node_gyp": "C:\\Program Files\\nodejs\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node-gyp.js",
++    "npm_version": "11.17.0",
++    "prefix": "C:\\Users\\zrdar\\AppData\\Roaming\\npm",
++    "userconfig": "C:\\Users\\zrdar\\.npmrc",
++    "user_agent": "npm/11.17.0 node/v24.19.0 win32 x64 workspaces/false"
+   }
+ }
