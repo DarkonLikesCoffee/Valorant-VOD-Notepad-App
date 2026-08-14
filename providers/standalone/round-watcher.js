@@ -197,28 +197,42 @@ class RoundWatcher {
 
       image.crop(x, y, width, height);
 
-      // Split the HUD into three independent OCR regions:
-      // [ LEFT SCORE ][    TIMER    ][ RIGHT SCORE ]
+// Manually define the three OCR regions.
+// All values are relative to the main cropped HUD image.
+//
+// leftX / leftWidth     = left score
+// centerX / centerWidth = timer
+// rightX / rightWidth   = right score
 
-      const leftWidth = Math.round(width * 0.3);
-      const centerWidth = Math.round(width * 0.4);
-      const rightWidth = width - leftWidth - centerWidth;
+const leftX = 0;
+const leftWidth = 50;
 
-      const leftImage = image.clone().crop(0, 0, leftWidth, height);
+const centerX = 120;
+const centerWidth = 90;
 
-      const centerImage = image.clone().crop(leftWidth, 0, centerWidth, height);
+const rightX = 276;
+const rightWidth = 50;
 
-      const rightImage = image
-        .clone()
-        .crop(leftWidth + centerWidth, 0, rightWidth, height);
+const leftImage = image.clone().crop(
+  leftX,
+  0,
+  leftWidth,
+  height
+);
 
-      // Preprocess each region separately.
-      [leftImage, centerImage, rightImage].forEach((img) => {
-        img
-          .greyscale()
-          .contrast(0.5)
-          .resize(img.bitmap.width * 4, img.bitmap.height * 4);
-      });
+const centerImage = image.clone().crop(
+  centerX,
+  0,
+  centerWidth,
+  height
+);
+
+const rightImage = image.clone().crop(
+  rightX,
+  0,
+  rightWidth,
+  height
+);
 
       // Save each OCR region so we can visually verify the crops.
       const path = require("path");
