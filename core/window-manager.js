@@ -10,15 +10,24 @@ class WindowManager {
 
   register(win) {
     if (this.windows.has(win)) return;
+
     this.windows.add(win);
-    win.on('closed', () => this.windows.delete(win));
+
+    win.on("closed", () => {
+      this.windows.delete(win);
+    });
   }
 
   bringToFront(win) {
     if (!win || win.isDestroyed()) return;
-    if (!win.isVisible()) win.show();
-    win.focus();
-    if (typeof win.moveTop === 'function') win.moveTop();
+
+    if (!win.isVisible()) {
+      win.show();
+    }
+
+    if (typeof win.moveTop === "function") {
+      win.moveTop();
+    }
   }
 
   showAndFocus(win) {
