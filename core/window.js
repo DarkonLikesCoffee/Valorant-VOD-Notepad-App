@@ -13,7 +13,6 @@ function createFloatingWindow({ width, height, x, y, preload, htmlFile, resizabl
     resizable,
     alwaysOnTop: true,
     skipTaskbar: true,
-    focusable: false,
     hasShadow: false,
     webPreferences: {
       preload,
