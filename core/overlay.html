@@ -1,214 +1,574 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8" />
-<link rel="stylesheet" href="theme.css" />
-<style>
-  html, body { background: transparent; height: 100%; overflow: hidden; }
-  #box { width: 100vw; height: 100vh; }
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="theme.css" />
+    <style>
+      html,
+      body {
+        background: transparent;
+        height: 100%;
+        overflow: hidden;
+      }
+      #box {
+        width: 100vw;
+        height: 100vh;
+      }
 
-  #banner {
-    -webkit-app-region: drag;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: .04em;
-    padding: 5px 10px;
-    text-align: center;
-    display: none;
-    flex-shrink: 0;
-  }
-  #banner.show { display: block; }
-  #banner.waiting { background: color-mix(in oklch, #ffc107 15%, transparent); color: #ffc107; }
-  #banner.not-running { background: color-mix(in oklch, var(--loss) 15%, transparent); color: var(--loss); }
+      #banner {
+        -webkit-app-region: drag;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        padding: 5px 10px;
+        text-align: center;
+        display: none;
+        flex-shrink: 0;
+      }
+      #banner.show {
+        display: block;
+      }
+      #banner.waiting {
+        background: color-mix(in oklch, #ffc107 15%, transparent);
+        color: #ffc107;
+      }
+      #banner.not-running {
+        background: color-mix(in oklch, var(--loss) 15%, transparent);
+        color: var(--loss);
+      }
 
-  #round-badge { background: var(--accent); color: var(--accent-foreground); }
-  #round-badge.won { background: var(--win); color: var(--background); }
-  #round-badge.lost { background: var(--loss); color: var(--background); }
+      #round-badge {
+        background: var(--accent);
+        color: var(--accent-foreground);
+      }
+      #round-badge.won {
+        background: var(--win);
+        color: var(--background);
+      }
+      #round-badge.lost {
+        background: var(--loss);
+        color: var(--background);
+      }
 
-  #elapsed { font-family: var(--font-mono); font-size: 11px; color: var(--overlay-muted); }
+      #elapsed {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--overlay-muted);
+      }
 
-  #stats {
-    font-family: var(--font-mono); font-size: 10px; color: var(--overlay-muted);
-    padding: 0 10px; min-height: 0;
-  }
-  #stats:not(:empty) { padding-top: 6px; }
+      #stats {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--overlay-muted);
+        padding: 0 10px;
+        min-height: 0;
+      }
+      #stats:not(:empty) {
+        padding-top: 6px;
+      }
 
-  #nav-wrap { display: flex; align-items: center; gap: 1px; }
-</style>
-</head>
-<body>
-  <div id="box" class="ov-panel">
-    <span class="ov-accent"></span>
-    <div id="banner"></div>
-    <div class="ov-head">
-      <span class="grip">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><circle cx="5" cy="3" r="1" fill="currentColor"/><circle cx="5" cy="8" r="1" fill="currentColor"/><circle cx="5" cy="13" r="1" fill="currentColor"/><circle cx="10" cy="3" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>
-      </span>
-      <span class="ov-title" style="display:flex; align-items:center; gap:6px; text-transform:none; letter-spacing:normal;">
-        <span id="round-badge" class="pill accent-solid">R0</span>
-        <span id="elapsed">00:00</span>
-      </span>
-      <div class="ov-head-right">
-        <div id="nav-wrap">
-          <button class="icon-btn" id="prevBtn" title="Previous round" aria-label="Previous round">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <button class="icon-btn" id="nextBtn" title="Next round" aria-label="Next round">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      #nav-wrap {
+        display: flex;
+        align-items: center;
+        gap: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="box" class="ov-panel">
+      <span class="ov-accent"></span>
+      <div id="banner"></div>
+      <div class="ov-head">
+        <span class="grip">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+            <circle cx="5" cy="3" r="1" fill="currentColor" />
+            <circle cx="5" cy="8" r="1" fill="currentColor" />
+            <circle cx="5" cy="13" r="1" fill="currentColor" />
+            <circle cx="10" cy="3" r="1" fill="currentColor" />
+            <circle cx="10" cy="8" r="1" fill="currentColor" />
+            <circle cx="10" cy="13" r="1" fill="currentColor" />
+          </svg>
+        </span>
+        <span
+          class="ov-title"
+          style="
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: none;
+            letter-spacing: normal;
+          "
+        >
+          <span id="round-badge" class="pill accent-solid">R0</span>
+          <span id="elapsed">00:00</span>
+        </span>
+        <div class="ov-head-right">
+          <div id="nav-wrap">
+            <button
+              class="icon-btn"
+              id="prevBtn"
+              title="Previous round"
+              aria-label="Previous round"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn"
+              id="nextBtn"
+              title="Next round"
+              aria-label="Next round"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+          <button
+            class="icon-btn"
+            id="pinBtn"
+            title="Keep visible when overlay closes"
+            aria-label="Pin"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z" />
+            </svg>
           </button>
         </div>
-        <button class="icon-btn" id="pinBtn" title="Keep visible when overlay closes" aria-label="Pin">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/></svg>
-        </button>
+      </div>
+      <div id="stats"></div>
+      <div class="ov-body">
+        <div class="fmt-bar">
+          <button
+            class="icon-btn"
+            data-wrap="**|**"
+            title="Bold (Ctrl+B)"
+            aria-label="Bold"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M6 4h8a4 4 0 010 8H6zM6 12h9a4 4 0 010 8H6z" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            data-wrap="*|*"
+            title="Italic (Ctrl+I)"
+            aria-label="Italic"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M19 4h-9M14 20H5M15 4L9 20" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            data-line="# "
+            title="Heading"
+            aria-label="Heading"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M6 4v16M18 4v16M6 12h12" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            data-line="## "
+            title="Subheading"
+            aria-label="Subheading"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+            >
+              <path
+                d="M4 6v12M11 6v12M4 12h7M15 18v-6.5a2 2 0 013.6-1.2c.3.4.4.9.4 1.4 0 1.6-4 3.4-4 6.3h4"
+              />
+            </svg>
+          </button>
+        </div>
+        <textarea
+          id="note"
+          class="ov-textarea"
+          placeholder="Note what just happened…"
+        ></textarea>
+      </div>
+      <div class="ov-foot">
+        <span style="display: flex; align-items: center; gap: 5px">
+          <span class="dot win"></span>
+          <span id="status">Auto-saved</span>
+        </span>
+        <span id="hotkeyHint">Alt+N close</span>
       </div>
     </div>
-    <div id="stats"></div>
-    <div class="ov-body">
-      <div class="fmt-bar">
-        <button class="icon-btn" data-wrap="**|**" title="Bold (Ctrl+B)" aria-label="Bold">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h8a4 4 0 010 8H6zM6 12h9a4 4 0 010 8H6z"/></svg>
-        </button>
-        <button class="icon-btn" data-wrap="*|*" title="Italic (Ctrl+I)" aria-label="Italic">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 4h-9M14 20H5M15 4L9 20"/></svg>
-        </button>
-        <button class="icon-btn" data-line="# " title="Heading" aria-label="Heading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12"/></svg>
-        </button>
-        <button class="icon-btn" data-line="## " title="Subheading" aria-label="Subheading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6v12M11 6v12M4 12h7M15 18v-6.5a2 2 0 013.6-1.2c.3.4.4.9.4 1.4 0 1.6-4 3.4-4 6.3h4"/></svg>
-        </button>
-      </div>
-      <textarea id="note" class="ov-textarea" placeholder="Note what just happened…"></textarea>
-    </div>
-    <div class="ov-foot">
-      <span style="display:flex; align-items:center; gap:5px;">
-        <span class="dot win"></span>
-        <span id="status">Auto-saved</span>
-      </span>
-      <span id="hotkeyHint">Alt+N close</span>
-    </div>
-  </div>
 
-  <script src="theme-runtime.js"></script>
-  <script>
-    const roundBadge = document.getElementById('round-badge');
-    const elapsedEl = document.getElementById('elapsed');
-    const statsEl = document.getElementById('stats');
-    const noteEl = document.getElementById('note');
-    const statusEl = document.getElementById('status');
-    const bannerEl = document.getElementById('banner');
-    const hintEl = document.getElementById('hotkeyHint');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
+    <script src="theme-runtime.js"></script>
+    <script>
+      const roundBadge = document.getElementById("round-badge");
+      const elapsedEl = document.getElementById("elapsed");
+      const statsEl = document.getElementById("stats");
+      const noteEl = document.getElementById("note");
+      const statusEl = document.getElementById("status");
+      const bannerEl = document.getElementById("banner");
+      const hintEl = document.getElementById("hotkeyHint");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
 
-    let saveTimer = null;
+      let saveTimer = null;
 
-    window.overlay.onAppearance((a) => {
-      // Opacity setting fades the whole floating panel over gameplay
-      // footage (same intent as the old rgba-background version, just
-      // implemented with a plain CSS opacity now that the panel is a
-      // themed/blurred surface rather than a flat rgba fill).
-      document.getElementById('box').style.opacity = a.opacity;
-      noteEl.style.fontSize = a.textSize + 'px';
-    });
+      function insertVirtualText(text) {
+        const start = noteEl.selectionStart;
+        const end = noteEl.selectionEnd;
 
-    window.overlay.onTheme((theme) => applyTheme(theme));
+        noteEl.value =
+          noteEl.value.slice(0, start) + text + noteEl.value.slice(end);
 
-    window.overlay.onHotkeys((hk) => {
-      hintEl.textContent = `${hk.toggle} close · ${hk.prevRound}/${hk.nextRound} nav`;
-    });
+        const caret = start + text.length;
 
-    window.overlay.onGameState((state) => {
-      bannerEl.classList.remove('show', 'waiting', 'not-running');
-      if (state === 'not-running') {
-        bannerEl.textContent = 'Start a game to begin your live VOD review';
-        bannerEl.classList.add('show', 'not-running');
-      } else if (state === 'waiting') {
-        bannerEl.textContent = 'Waiting for match to start...';
-        bannerEl.classList.add('show', 'waiting');
+        noteEl.setSelectionRange(caret, caret);
+        noteEl.dispatchEvent(new Event("input", { bubbles: true }));
       }
-      // 'in-match' -> banner stays hidden. Note: this NEVER disables the
-      // textarea in any state -- it's informational only, so you can
-      // always type regardless of what state it's in.
-    });
 
-    window.overlay.onRoundData((data) => {
-      roundBadge.classList.remove('won', 'lost');
-      let label = `R${data.round}`;
-      if (data.outcome === 'won') { roundBadge.classList.add('won'); }
-      else if (data.outcome === 'lost') { roundBadge.classList.add('lost'); }
-      if (!data.isLive) label += ' ·past';
-      roundBadge.textContent = label;
-      elapsedEl.textContent = data.elapsed;
-      statsEl.textContent = data.stats ? JSON.stringify(data.stats) : '';
-      noteEl.value = data.note || '';
-      prevBtn.disabled = !data.hasPrev;
-      nextBtn.disabled = !data.hasNext;
-      noteEl.focus();
-      noteEl.setSelectionRange(noteEl.value.length, noteEl.value.length);
-      statusEl.textContent = 'Auto-saved';
-    });
+      function handleEditorShortcut(event) {
+        const start = noteEl.selectionStart;
+        const end = noteEl.selectionEnd;
 
-    // Just a visual toggle -- when persistent, this notepad keeps
-    // showing/updating even after the overlay (and everything else in
-    // it) closes -- see closeOverlay() in main.js.
-    window.overlay.onPersistState((persistent) => {
-      document.getElementById('pinBtn').classList.toggle('active', persistent);
-    });
+        // Ctrl+A — select everything
+        if (event.ctrl && !event.shift && event.vk === 0x41) {
+          noteEl.focus();
+          noteEl.select();
+          return;
+        }
 
-    noteEl.addEventListener('input', () => {
-      statusEl.textContent = 'Saving…';
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        window.overlay.saveNote(noteEl.value);
-        statusEl.textContent = 'Auto-saved';
-      }, 300);
-    });
+        // Ctrl+C — copy selection
+        if (event.ctrl && !event.shift && event.vk === 0x43) {
+          noteEl.focus();
 
-    function wrapSelection(pattern) {
-      const [before, after] = pattern.split('|');
-      const start = noteEl.selectionStart;
-      const end = noteEl.selectionEnd;
-      const selected = noteEl.value.slice(start, end);
-      noteEl.value = noteEl.value.slice(0, start) + before + selected + after + noteEl.value.slice(end);
-      noteEl.setSelectionRange(start + before.length, start + before.length + selected.length);
-      noteEl.dispatchEvent(new Event('input'));
-      noteEl.focus();
-    }
+          if (start !== end) {
+            const selected = noteEl.value.slice(start, end);
+            navigator.clipboard.writeText(selected).catch(() => {});
+          }
 
-    function prependLine(prefix) {
-      const start = noteEl.selectionStart;
-      const lineStart = noteEl.value.lastIndexOf('\n', start - 1) + 1;
-      noteEl.value = noteEl.value.slice(0, lineStart) + prefix + noteEl.value.slice(lineStart);
-      noteEl.setSelectionRange(start + prefix.length, start + prefix.length);
-      noteEl.dispatchEvent(new Event('input'));
-      noteEl.focus();
-    }
+          return;
+        }
 
-    document.querySelectorAll('.fmt-bar button').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.wrap) wrapSelection(btn.dataset.wrap);
-        if (btn.dataset.line) prependLine(btn.dataset.line);
+        // Ctrl+V — paste
+        if (event.ctrl && !event.shift && event.vk === 0x56) {
+          noteEl.focus();
+
+          navigator.clipboard
+            .readText()
+            .then((text) => {
+              if (!text) return;
+
+              const currentStart = noteEl.selectionStart;
+              const currentEnd = noteEl.selectionEnd;
+
+              noteEl.value =
+                noteEl.value.slice(0, currentStart) +
+                text +
+                noteEl.value.slice(currentEnd);
+
+              const caret = currentStart + text.length;
+
+              noteEl.setSelectionRange(caret, caret);
+              noteEl.dispatchEvent(new Event("input", { bubbles: true }));
+            })
+            .catch(() => {});
+
+          return;
+        }
+
+        // Ctrl+X — cut
+        if (event.ctrl && !event.shift && event.vk === 0x58) {
+          noteEl.focus();
+
+          if (start !== end) {
+            const selected = noteEl.value.slice(start, end);
+
+            navigator.clipboard.writeText(selected).catch(() => {});
+
+            noteEl.value =
+              noteEl.value.slice(0, start) + noteEl.value.slice(end);
+
+            noteEl.setSelectionRange(start, start);
+
+            noteEl.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          return;
+        }
+
+        // Ctrl+Z — undo
+        if (event.ctrl && !event.shift && event.vk === 0x5a) {
+          noteEl.focus();
+
+          document.execCommand("undo");
+          return;
+        }
+
+        // Ctrl+Y — redo
+        if (event.ctrl && !event.shift && event.vk === 0x59) {
+          noteEl.focus();
+
+          document.execCommand("redo");
+          return;
+        }
+
+        // Ctrl+Shift+Z — redo
+        if (event.ctrl && event.shift && event.vk === 0x5a) {
+          noteEl.focus();
+
+          document.execCommand("redo");
+          return;
+        }
+
+        // Ctrl+B — bold
+        if (event.ctrl && !event.shift && event.vk === 0x42) {
+          document.querySelector('[data-wrap="**|**"]')?.click();
+
+          return;
+        }
+
+        // Ctrl+I — italic
+        if (event.ctrl && !event.shift && event.vk === 0x49) {
+          document.querySelector('[data-wrap="*|*"]')?.click();
+
+          return;
+        }
+      }
+
+      window.overlay.onVirtualKey((event) => {
+        if (event.type === "editor-shortcut") {
+          handleEditorShortcut(event);
+          return;
+        }
+
+        if (event.type !== "keydown") return;
+
+        // Backspace
+        if (event.vk === 0x08) {
+          const start = noteEl.selectionStart;
+          const end = noteEl.selectionEnd;
+
+          if (start !== end) {
+            noteEl.value =
+              noteEl.value.slice(0, start) + noteEl.value.slice(end);
+
+            noteEl.setSelectionRange(start, start);
+          } else if (start > 0) {
+            noteEl.value =
+              noteEl.value.slice(0, start - 1) + noteEl.value.slice(end);
+
+            noteEl.setSelectionRange(start - 1, start - 1);
+          }
+
+          noteEl.dispatchEvent(new Event("input", { bubbles: true }));
+
+          return;
+        }
+
+        // Delete
+        if (event.vk === 0x2e) {
+          const start = noteEl.selectionStart;
+          const end = noteEl.selectionEnd;
+
+          if (start !== end) {
+            noteEl.value =
+              noteEl.value.slice(0, start) + noteEl.value.slice(end);
+
+            noteEl.setSelectionRange(start, start);
+          } else if (start < noteEl.value.length) {
+            noteEl.value =
+              noteEl.value.slice(0, start) + noteEl.value.slice(start + 1);
+
+            noteEl.setSelectionRange(start, start);
+          }
+
+          noteEl.dispatchEvent(new Event("input", { bubbles: true }));
+
+          return;
+        }
+
+        // Enter
+        if (event.vk === 0x0d) {
+          insertVirtualText("\n");
+          return;
+        }
+
+        // Space
+        if (event.vk === 0x20) {
+          insertVirtualText(" ");
+          return;
+        }
+
+        // Windows-translated character
+        if (event.text && !event.ctrl && !event.alt && !event.win) {
+          insertVirtualText(event.text);
+          return;
+        }
       });
-    });
 
-    prevBtn.addEventListener('click', () => window.overlay.navRound('prev'));
-    nextBtn.addEventListener('click', () => window.overlay.navRound('next'));
+      window.overlay.onAppearance((a) => {
+        // Opacity setting fades the whole floating panel over gameplay
+        // footage (same intent as the old rgba-background version, just
+        // implemented with a plain CSS opacity now that the panel is a
+        // themed/blurred surface rather than a flat rgba fill).
+        document.getElementById("box").style.opacity = a.opacity;
+        noteEl.style.fontSize = a.textSize + "px";
+      });
 
-    noteEl.addEventListener('keydown', (e) => {
-      const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key.toLowerCase() === 'b') { e.preventDefault(); wrapSelection('**|**'); }
-      if (mod && e.key.toLowerCase() === 'i') { e.preventDefault(); wrapSelection('*|*'); }
-    });
+      window.overlay.onTheme((theme) => applyTheme(theme));
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        window.overlay.saveNote(noteEl.value);
-        window.overlay.hide();
+      window.overlay.onHotkeys((hk) => {
+        hintEl.textContent = `${hk.toggle} close · ${hk.prevRound}/${hk.nextRound} nav`;
+      });
+
+      window.overlay.onGameState((state) => {
+        bannerEl.classList.remove("show", "waiting", "not-running");
+        if (state === "not-running") {
+          bannerEl.textContent = "Start a game to begin your live VOD review";
+          bannerEl.classList.add("show", "not-running");
+        } else if (state === "waiting") {
+          bannerEl.textContent = "Waiting for match to start...";
+          bannerEl.classList.add("show", "waiting");
+        }
+        // 'in-match' -> banner stays hidden. Note: this NEVER disables the
+        // textarea in any state -- it's informational only, so you can
+        // always type regardless of what state it's in.
+      });
+
+      window.overlay.onRoundData((data) => {
+        roundBadge.classList.remove("won", "lost");
+        let label = `R${data.round}`;
+        if (data.outcome === "won") {
+          roundBadge.classList.add("won");
+        } else if (data.outcome === "lost") {
+          roundBadge.classList.add("lost");
+        }
+        if (!data.isLive) label += " ·past";
+        roundBadge.textContent = label;
+        elapsedEl.textContent = data.elapsed;
+        statsEl.textContent = data.stats ? JSON.stringify(data.stats) : "";
+        noteEl.value = data.note || "";
+        prevBtn.disabled = !data.hasPrev;
+        nextBtn.disabled = !data.hasNext;
+        noteEl.setSelectionRange(noteEl.value.length, noteEl.value.length);
+        statusEl.textContent = "Auto-saved";
+      });
+
+      // Just a visual toggle -- when persistent, this notepad keeps
+      // showing/updating even after the overlay (and everything else in
+      // it) closes -- see closeOverlay() in main.js.
+      window.overlay.onPersistState((persistent) => {
+        document
+          .getElementById("pinBtn")
+          .classList.toggle("active", persistent);
+      });
+
+      noteEl.addEventListener("input", () => {
+        statusEl.textContent = "Saving…";
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          window.overlay.saveNote(noteEl.value);
+          statusEl.textContent = "Auto-saved";
+        }, 300);
+      });
+
+      function wrapSelection(pattern) {
+        const [before, after] = pattern.split("|");
+        const start = noteEl.selectionStart;
+        const end = noteEl.selectionEnd;
+        const selected = noteEl.value.slice(start, end);
+        noteEl.value =
+          noteEl.value.slice(0, start) +
+          before +
+          selected +
+          after +
+          noteEl.value.slice(end);
+        noteEl.setSelectionRange(
+          start + before.length,
+          start + before.length + selected.length,
+        );
+        noteEl.dispatchEvent(new Event("input"));
+        noteEl.focus();
       }
-    });
 
-    document.getElementById('pinBtn').addEventListener('click', () => window.overlay.togglePersist());
-  </script>
-</body>
+      function prependLine(prefix) {
+        const start = noteEl.selectionStart;
+        const lineStart = noteEl.value.lastIndexOf("\n", start - 1) + 1;
+        noteEl.value =
+          noteEl.value.slice(0, lineStart) +
+          prefix +
+          noteEl.value.slice(lineStart);
+        noteEl.setSelectionRange(start + prefix.length, start + prefix.length);
+        noteEl.dispatchEvent(new Event("input"));
+        noteEl.focus();
+      }
+
+      document.querySelectorAll(".fmt-bar button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.dataset.wrap) wrapSelection(btn.dataset.wrap);
+          if (btn.dataset.line) prependLine(btn.dataset.line);
+        });
+      });
+
+      prevBtn.addEventListener("click", () => window.overlay.navRound("prev"));
+      nextBtn.addEventListener("click", () => window.overlay.navRound("next"));
+
+      noteEl.addEventListener("keydown", (e) => {
+        const mod = e.ctrlKey || e.metaKey;
+        if (mod && e.key.toLowerCase() === "b") {
+          e.preventDefault();
+          wrapSelection("**|**");
+        }
+        if (mod && e.key.toLowerCase() === "i") {
+          e.preventDefault();
+          wrapSelection("*|*");
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          window.overlay.saveNote(noteEl.value);
+          window.overlay.hide();
+        }
+      });
+
+      document
+        .getElementById("pinBtn")
+        .addEventListener("click", () => window.overlay.togglePersist());
+    </script>
+  </body>
 </html>

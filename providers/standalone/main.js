@@ -1,19 +1,32 @@
-const { app, globalShortcut, ipcMain, shell, Tray, Menu, nativeImage } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const { SessionManager } = require('../../core/session');
-const { createFloatingWindow, defaultPositionFor, clampToScreen } = require('../../core/window');
-const { createToolbarWindow } = require('../../core/toolbar-window');
-const { createScratchWindow } = require('../../core/scratch-window');
-const { createSessionsWindow } = require('../../core/sessions-window');
-const { createBrowserWindow } = require('../../core/browser-window');
-const { createBackdropWindow } = require('../../core/overlay-backdrop');
-const { createMainWindow } = require('../../core/main-window');
-const { WindowManager } = require('../../core/window-manager');
-const settingsStore = require('../../core/settings-store');
-const { RoundWatcher } = require('./round-watcher');
-const { TabCapture } = require('./tab-capture');
-const { FocusWatcher } = require('./focus-watcher');
+const {
+  app,
+  globalShortcut,
+  ipcMain,
+  shell,
+  Tray,
+  Menu,
+  nativeImage,
+} = require("electron");
+const fs = require("fs");
+const path = require("path");
+const { SessionManager } = require("../../core/session");
+const {
+  createFloatingWindow,
+  defaultPositionFor,
+  clampToScreen,
+} = require("../../core/window");
+const { createToolbarWindow } = require("../../core/toolbar-window");
+const { createScratchWindow } = require("../../core/scratch-window");
+const { createSessionsWindow } = require("../../core/sessions-window");
+const { createBrowserWindow } = require("../../core/browser-window");
+const { createBackdropWindow } = require("../../core/overlay-backdrop");
+const { createMainWindow } = require("../../core/main-window");
+const { WindowManager } = require("../../core/window-manager");
+const settingsStore = require("../../core/settings-store");
+const { RoundWatcher } = require("./round-watcher");
+const { TabCapture } = require("./tab-capture");
+const { FocusWatcher } = require("./focus-watcher");
+const overlayInput = require("../../core/overlay-input");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -29,9 +42,9 @@ if (!gotLock) {
   app.quit();
 }
 
-const NOTES_DIR = path.join(app.getPath('documents'), 'ValorantVODNotes');
-const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
-const SCRATCH_PATH = path.join(NOTES_DIR, 'scratchpad.md');
+const NOTES_DIR = path.join(app.getPath("documents"), "ValorantVODNotes");
+const SETTINGS_PATH = path.join(app.getPath("userData"), "settings.json");
+const SCRATCH_PATH = path.join(NOTES_DIR, "scratchpad.md");
 
 const wm = new WindowManager();
 
@@ -50,9 +63,14 @@ let watcher = null;
 let tabCapture = null;
 let focusWatcher = null;
 let settings = settingsStore.load(SETTINGS_PATH);
-let currentGameState = 'not-running';
+let currentGameState = "not-running";
 
-let suppressBoundsSave = { notepad: false, toolbar: false, scratch: false, sessions: false };
+let suppressBoundsSave = {
+  notepad: false,
+  toolbar: false,
+  scratch: false,
+  sessions: false,
+};
 
 // LOCK: position/size lock for every overlay window at once. Toolbar-only
 // concept -- toggled from the toolbar's lock button.
@@ -83,7 +101,7 @@ let visiblePanels = new Set();
 // the game, same as Valorant Tracker.
 let valorantFocused = false;
 
-const PANEL_IDS = ['notepad', 'toolbar', 'scratch', 'sessions', 'browser'];
+const PANEL_IDS = ["notepad", "toolbar", "scratch", "sessions", "browser"];
 
 // Guards against a window's own resize/move handler saving a bounds
 // change that WE triggered programmatically (e.g. applying a preset) --
@@ -95,23 +113,30 @@ const PANEL_IDS = ['notepad', 'toolbar', 'scratch', 'sessions', 'browser'];
 // can be seconds later -- long after the 100ms window had closed. The fix
 // is to remember exactly what bounds we last applied programmatically and
 // compare against that instead of racing a timer.
-let lastAppliedBounds = { notepad: null, toolbar: null, scratch: null, sessions: null };
+let lastAppliedBounds = {
+  notepad: null,
+  toolbar: null,
+  scratch: null,
+  sessions: null,
+};
 
 function pushRoundToRenderer() {
-  if (notepadWin) notepadWin.webContents.send('round-data', session.currentRoundPayload());
+  if (notepadWin)
+    notepadWin.webContents.send("round-data", session.currentRoundPayload());
 }
 function pushAppearance() {
-  if (notepadWin) notepadWin.webContents.send('appearance-data', settings.notepad);
+  if (notepadWin)
+    notepadWin.webContents.send("appearance-data", settings.notepad);
 }
 function pushHotkeys() {
-  if (notepadWin) notepadWin.webContents.send('hotkeys-data', settings.hotkeys);
+  if (notepadWin) notepadWin.webContents.send("hotkeys-data", settings.hotkeys);
 }
 function pushGameState(state) {
-  if (notepadWin) notepadWin.webContents.send('game-state', state);
+  if (notepadWin) notepadWin.webContents.send("game-state", state);
 }
 function pushThemeToAll() {
   [notepadWin, toolbarWin, scratchWin, sessionsWin, mainWin].forEach((w) => {
-    if (w) w.webContents.send('theme-data', settings.theme);
+    if (w) w.webContents.send("theme-data", settings.theme);
   });
 }
 
@@ -127,7 +152,7 @@ function previewThemeToAll(theme) {
   [notepadWin, toolbarWin, scratchWin, sessionsWin, mainWin].forEach((w) => {
     if (w) {
       // console.log('[theme-preview] sending to window');
-      w.webContents.send('theme-data', theme);
+      w.webContents.send("theme-data", theme);
     }
   });
 }
@@ -135,14 +160,14 @@ function previewThemeToAll(theme) {
 // needs to reach that one window -- unlike theme, which every window
 // needs to know about.
 function pushLockStateToAll() {
-  if (toolbarWin) toolbarWin.webContents.send('lock-state', locked);
+  if (toolbarWin) toolbarWin.webContents.send("lock-state", locked);
 }
 
 // PERSIST is per-panel, so tell just that one panel's window whether
 // IT specifically is currently pinned-to-stay-open.
 function pushPersistState(id) {
   const w = getPanelWin(id);
-  if (w) w.webContents.send('persist-state', persistentPanels.has(id));
+  if (w) w.webContents.send("persist-state", persistentPanels.has(id));
 }
 
 // ---- Lock: locks every overlay window's position AND size ----
@@ -186,7 +211,7 @@ function applyLockState() {
 // which one, always reflects reality.
 function persistSettings() {
   settingsStore.save(SETTINGS_PATH, settings);
-  if (mainWin) mainWin.webContents.send('settings-data', settings);
+  if (mainWin) mainWin.webContents.send("settings-data", settings);
 }
 
 function watchWindowBounds(win, windowId) {
@@ -202,7 +227,13 @@ function watchWindowBounds(win, windowId) {
   const save = (kind) => {
     const b = win.getBounds();
     const applied = lastAppliedBounds[windowId];
-    if (applied && b.x === applied.x && b.y === applied.y && b.width === applied.width && b.height === applied.height) {
+    if (
+      applied &&
+      b.x === applied.x &&
+      b.y === applied.y &&
+      b.width === applied.width &&
+      b.height === applied.height
+    ) {
       return; // this is our own programmatic change echoing back, not a real user drag
     }
     pendingKinds.add(kind);
@@ -214,25 +245,37 @@ function watchWindowBounds(win, windowId) {
       // resize must never flip position to custom. Dragging a corner
       // genuinely changes both, so both get updated in that case, and
       // only in that case.
-      if (pendingKinds.has('resize')) {
-        settings[windowId].size = { mode: 'custom', preset: settings[windowId].size.preset, width: b2.width, height: b2.height };
+      if (pendingKinds.has("resize")) {
+        settings[windowId].size = {
+          mode: "custom",
+          preset: settings[windowId].size.preset,
+          width: b2.width,
+          height: b2.height,
+        };
       }
-      if (pendingKinds.has('move')) {
-        settings[windowId].position = { mode: 'custom', preset: settings[windowId].position.preset, x: b2.x, y: b2.y };
+      if (pendingKinds.has("move")) {
+        settings[windowId].position = {
+          mode: "custom",
+          preset: settings[windowId].position.preset,
+          x: b2.x,
+          y: b2.y,
+        };
       }
       pendingKinds.clear();
       persistSettings();
     }, 400);
   };
-  win.on('resize', () => save('resize'));
-  win.on('move', () => save('move'));
+  win.on("resize", () => save("resize"));
+  win.on("move", () => save("move"));
 }
 
 function applyBounds(win, windowId) {
   const size = settingsStore.sizeFor(windowId, settings[windowId].size);
-  const rawPos = settings[windowId].position.mode === 'custom' && settings[windowId].position.x !== null
-    ? { x: settings[windowId].position.x, y: settings[windowId].position.y }
-    : defaultPositionFor(settings[windowId].position.preset, size);
+  const rawPos =
+    settings[windowId].position.mode === "custom" &&
+    settings[windowId].position.x !== null
+      ? { x: settings[windowId].position.x, y: settings[windowId].position.y }
+      : defaultPositionFor(settings[windowId].position.preset, size);
   const pos = clampToScreen(rawPos, size); // keeps it fully on-screen even if a saved custom x/y + new size would push it off an edge
   const bounds = { x: pos.x, y: pos.y, width: size.width, height: size.height };
   lastAppliedBounds[windowId] = bounds;
@@ -241,10 +284,12 @@ function applyBounds(win, windowId) {
 
 // ---- Notepad ----
 function createNotepad() {
-  const size = settingsStore.sizeFor('notepad', settings.notepad.size);
-  const rawPos = settings.notepad.position.mode === 'custom' && settings.notepad.position.x !== null
-    ? { x: settings.notepad.position.x, y: settings.notepad.position.y }
-    : defaultPositionFor(settings.notepad.position.preset, size);
+  const size = settingsStore.sizeFor("notepad", settings.notepad.size);
+  const rawPos =
+    settings.notepad.position.mode === "custom" &&
+    settings.notepad.position.x !== null
+      ? { x: settings.notepad.position.x, y: settings.notepad.position.y }
+      : defaultPositionFor(settings.notepad.position.preset, size);
   const pos = clampToScreen(rawPos, size);
 
   // Suppress bounds-save during creation too, not just during a later
@@ -254,14 +299,20 @@ function createNotepad() {
   // preset back to "custom" even though the pixel size never changed.
   suppressBoundsSave.notepad = true;
   notepadWin = createFloatingWindow({
-    width: size.width, height: size.height, x: pos.x, y: pos.y,
-    preload: path.join(__dirname, '..', '..', 'core', 'preload.js'),
-    htmlFile: path.join(__dirname, '..', '..', 'core', 'overlay.html'),
-    minWidth: 260, minHeight: 200
+    width: size.width,
+    height: size.height,
+    x: pos.x,
+    y: pos.y,
+    preload: path.join(__dirname, "..", "..", "core", "preload.js"),
+    htmlFile: path.join(__dirname, "..", "..", "core", "overlay.html"),
+    minWidth: 260,
+    minHeight: 200,
   });
   wm.register(notepadWin);
-  watchWindowBounds(notepadWin, 'notepad');
-  setTimeout(() => { suppressBoundsSave.notepad = false; }, 300);
+  watchWindowBounds(notepadWin, "notepad");
+  setTimeout(() => {
+    suppressBoundsSave.notepad = false;
+  }, 300);
 }
 
 // Manual fallback: bumps the LIVE round by one by hand, for whenever OCR
@@ -283,53 +334,67 @@ function newGameSession() {
 
 // ---- Toolbar ----
 function createToolbar() {
-  const size = settingsStore.sizeFor('toolbar', settings.toolbar.size);
-  const rawPos = settings.toolbar.position.mode === 'custom' && settings.toolbar.position.x !== null
-    ? { x: settings.toolbar.position.x, y: settings.toolbar.position.y }
-    : defaultPositionFor(settings.toolbar.position.preset, size);
+  const size = settingsStore.sizeFor("toolbar", settings.toolbar.size);
+  const rawPos =
+    settings.toolbar.position.mode === "custom" &&
+    settings.toolbar.position.x !== null
+      ? { x: settings.toolbar.position.x, y: settings.toolbar.position.y }
+      : defaultPositionFor(settings.toolbar.position.preset, size);
   const pos = clampToScreen(rawPos, size);
 
   suppressBoundsSave.toolbar = true;
   toolbarWin = createToolbarWindow(size, pos);
   wm.register(toolbarWin);
-  watchWindowBounds(toolbarWin, 'toolbar');
-  setTimeout(() => { suppressBoundsSave.toolbar = false; }, 300);
+  watchWindowBounds(toolbarWin, "toolbar");
+  setTimeout(() => {
+    suppressBoundsSave.toolbar = false;
+  }, 300);
 }
 
 // ---- Scratch notepad ----
 function ensureScratchWindow() {
   if (scratchWin) return;
-  const size = settingsStore.sizeFor('scratch', settings.scratch.size);
-  const rawPos = settings.scratch.position.mode === 'custom' && settings.scratch.position.x !== null
-    ? { x: settings.scratch.position.x, y: settings.scratch.position.y }
-    : defaultPositionFor(settings.scratch.position.preset, size);
+  const size = settingsStore.sizeFor("scratch", settings.scratch.size);
+  const rawPos =
+    settings.scratch.position.mode === "custom" &&
+    settings.scratch.position.x !== null
+      ? { x: settings.scratch.position.x, y: settings.scratch.position.y }
+      : defaultPositionFor(settings.scratch.position.preset, size);
   const pos = clampToScreen(rawPos, size);
   suppressBoundsSave.scratch = true;
   scratchWin = createScratchWindow(size, pos);
   wm.register(scratchWin);
-  watchWindowBounds(scratchWin, 'scratch');
-  setTimeout(() => { suppressBoundsSave.scratch = false; }, 300);
+  watchWindowBounds(scratchWin, "scratch");
+  setTimeout(() => {
+    suppressBoundsSave.scratch = false;
+  }, 300);
 }
 
 function loadScratchIntoWindow() {
-  const text = fs.existsSync(SCRATCH_PATH) ? fs.readFileSync(SCRATCH_PATH, 'utf-8') : '';
-  scratchWin.webContents.send('theme-data', settings.theme);
-  scratchWin.webContents.send('scratch-load', text);
+  const text = fs.existsSync(SCRATCH_PATH)
+    ? fs.readFileSync(SCRATCH_PATH, "utf-8")
+    : "";
+  scratchWin.webContents.send("theme-data", settings.theme);
+  scratchWin.webContents.send("scratch-load", text);
 }
 
 // ---- Session browser ----
 function ensureSessionsWindow() {
   if (sessionsWin) return;
-  const size = settingsStore.sizeFor('sessions', settings.sessions.size);
-  const rawPos = settings.sessions.position.mode === 'custom' && settings.sessions.position.x !== null
-    ? { x: settings.sessions.position.x, y: settings.sessions.position.y }
-    : defaultPositionFor(settings.sessions.position.preset, size);
+  const size = settingsStore.sizeFor("sessions", settings.sessions.size);
+  const rawPos =
+    settings.sessions.position.mode === "custom" &&
+    settings.sessions.position.x !== null
+      ? { x: settings.sessions.position.x, y: settings.sessions.position.y }
+      : defaultPositionFor(settings.sessions.position.preset, size);
   const pos = clampToScreen(rawPos, size);
   suppressBoundsSave.sessions = true;
   sessionsWin = createSessionsWindow(size, pos);
   wm.register(sessionsWin);
-  watchWindowBounds(sessionsWin, 'sessions');
-  setTimeout(() => { suppressBoundsSave.sessions = false; }, 300);
+  watchWindowBounds(sessionsWin, "sessions");
+  setTimeout(() => {
+    suppressBoundsSave.sessions = false;
+  }, 300);
 }
 
 // ---- Browser browser ----
@@ -338,27 +403,27 @@ function ensureBrowserWindow() {
 
   const size = {
     width: 900,
-    height: 650
+    height: 650,
   };
 
-  const rawPos = defaultPositionFor('center', size);
+  const rawPos = defaultPositionFor("center", size);
   const pos = clampToScreen(rawPos, size);
 
   browserWin = createBrowserWindow(size, pos);
 
   const webView = browserWin.browserWebView;
 
-webView.webContents.on('did-navigate', (_event, url) => {
-  browserWin.webContents.send('browser-url-changed', url);
-});
+  webView.webContents.on("did-navigate", (_event, url) => {
+    browserWin.webContents.send("browser-url-changed", url);
+  });
 
-webView.webContents.on('did-navigate-in-page', (_event, url) => {
-  browserWin.webContents.send('browser-url-changed', url);
-});
+  webView.webContents.on("did-navigate-in-page", (_event, url) => {
+    browserWin.webContents.send("browser-url-changed", url);
+  });
 
   wm.register(browserWin);
 
-  browserWin.on('closed', () => {
+  browserWin.on("closed", () => {
     browserWin = null;
   });
 }
@@ -373,11 +438,11 @@ webView.webContents.on('did-navigate-in-page', (_event, url) => {
 function createMainAppWindow() {
   mainWin = createMainWindow();
   wm.register(mainWin);
-  mainWin.once('ready-to-show', () => {
+  mainWin.once("ready-to-show", () => {
     pushThemeToAll();
     mainWin.show();
   });
-  mainWin.on('close', (event) => {
+  mainWin.on("close", (event) => {
     if (!isQuitting) {
       event.preventDefault();
       mainWin.hide();
@@ -410,14 +475,21 @@ function createTrayIcon() {
 
 function createTray() {
   tray = new Tray(createTrayIcon());
-  tray.setToolTip('Valorant VOD Notepad');
+  tray.setToolTip("Valorant VOD Notepad");
   const menu = Menu.buildFromTemplate([
-    { label: 'Open App', click: () => { if (mainWin) wm.showAndFocus(mainWin); } },
-    { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() }
+    {
+      label: "Open App",
+      click: () => {
+        if (mainWin) wm.showAndFocus(mainWin);
+      },
+    },
+    { type: "separator" },
+    { label: "Quit", click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
-  tray.on('click', () => { if (mainWin) wm.showAndFocus(mainWin); });
+  tray.on("click", () => {
+    if (mainWin) wm.showAndFocus(mainWin);
+  });
 }
 
 // ---- Unified overlay ----
@@ -431,39 +503,39 @@ function getPanelWin(id) {
     toolbar: toolbarWin,
     scratch: scratchWin,
     sessions: sessionsWin,
-    browser: browserWin
+    browser: browserWin,
   }[id];
 }
 
 function showPanelWindow(id) {
   switch (id) {
-    case 'notepad':
+    case "notepad":
       session.openForViewing();
       pushAppearance();
       pushHotkeys();
       pushThemeToAll();
       pushGameState(currentGameState);
-      pushPersistState('notepad');
+      pushPersistState("notepad");
       pushRoundToRenderer();
       wm.showAndFocus(notepadWin);
       break;
-    case 'toolbar':
+    case "toolbar":
       pushThemeToAll();
       pushLockStateToAll();
       wm.showAndFocus(toolbarWin);
       break;
-    case 'scratch':
+    case "scratch":
       ensureScratchWindow();
       loadScratchIntoWindow();
-      pushPersistState('scratch');
+      pushPersistState("scratch");
       wm.showAndFocus(scratchWin);
       break;
-    case 'sessions':
+    case "sessions":
       ensureSessionsWindow();
-      sessionsWin.webContents.send('theme-data', settings.theme);
+      sessionsWin.webContents.send("theme-data", settings.theme);
       wm.showAndFocus(sessionsWin);
       break;
-    case 'browser':
+    case "browser":
       ensureBrowserWindow();
       wm.showAndFocus(browserWin);
       break;
@@ -474,8 +546,224 @@ function showPanelWindow(id) {
 function hidePanelWindow(id) {
   const win = getPanelWin(id);
   if (!win) return;
-  if (id === 'notepad' && session) session.closeViewing();
+  if (id === "notepad" && session) session.closeViewing();
   win.hide();
+}
+
+function startOverlayInput() {
+  if (!notepadWin) return;
+
+  overlayInput.start({
+    hotkeys: Object.values(settings.hotkeys)
+      .filter(Boolean)
+      .map((accelerator) => {
+        const parts = accelerator
+          .split("+")
+          .map((part) => part.trim().toUpperCase());
+
+        const result = {
+          vk: 0,
+          ctrl: false,
+          alt: false,
+          shift: false,
+          win: false,
+        };
+
+        const keyNames = {
+          A: 65,
+          B: 66,
+          C: 67,
+          D: 68,
+          E: 69,
+          F: 70,
+          G: 71,
+          H: 72,
+          I: 73,
+          J: 74,
+          K: 75,
+          L: 76,
+          M: 77,
+          N: 78,
+          O: 79,
+          P: 80,
+          Q: 81,
+          R: 82,
+          S: 83,
+          T: 84,
+          U: 85,
+          V: 86,
+          W: 87,
+          X: 88,
+          Y: 89,
+          Z: 90,
+
+          0: 48,
+          1: 49,
+          2: 50,
+          3: 51,
+          4: 52,
+          5: 53,
+          6: 54,
+          7: 55,
+          8: 56,
+          9: 57,
+
+          LEFT: 37,
+          UP: 38,
+          RIGHT: 39,
+          DOWN: 40,
+          HOME: 36,
+          END: 35,
+          PRIOR: 33,
+          NEXT: 34,
+          INSERT: 45,
+          DELETE: 46,
+          TAB: 9,
+          ENTER: 13,
+          ESCAPE: 27,
+          SPACE: 32,
+        };
+
+        for (const part of parts) {
+          if (part === "CTRL" || part === "CONTROL") {
+            result.ctrl = true;
+          } else if (part === "ALT") {
+            result.alt = true;
+          } else if (part === "SHIFT") {
+            result.shift = true;
+          } else if (
+            part === "WIN" ||
+            part === "WINDOWS" ||
+            part === "SUPER" ||
+            part === "META"
+          ) {
+            result.win = true;
+          } else if (keyNames[part] !== undefined) {
+            result.vk = keyNames[part];
+          }
+        }
+
+        return result;
+      }),
+    onDown: (event) => {
+      if (!overlayOpen) return;
+      if (!visiblePanels.has("notepad")) return;
+      if (!notepadWin || notepadWin.isDestroyed()) return;
+
+      notepadWin.webContents.send("virtual-key", {
+        type: event.type === "editor-shortcut" ? "editor-shortcut" : "keydown",
+        vk: event.vk,
+        scan: event.scan,
+        text: event.text,
+        shift: event.shift,
+        ctrl: event.ctrl,
+        alt: event.alt,
+        win: event.win,
+      });
+    },
+
+    onUp: (event) => {
+      if (!overlayOpen) return;
+      if (!visiblePanels.has("notepad")) return;
+      if (!notepadWin || notepadWin.isDestroyed()) return;
+
+      notepadWin.webContents.send("virtual-key", {
+        type: "keyup",
+        vk: event.vk,
+        scan: event.scan,
+        shift: event.shift,
+        ctrl: event.ctrl,
+        alt: event.alt,
+        win: event.win,
+      });
+    },
+
+    onHotkey: (event) => {
+      const keyNames = {
+        65: "A",
+        66: "B",
+        67: "C",
+        68: "D",
+        69: "E",
+        70: "F",
+        71: "G",
+        72: "H",
+        73: "I",
+        74: "J",
+        75: "K",
+        76: "L",
+        77: "M",
+        78: "N",
+        79: "O",
+        80: "P",
+        81: "Q",
+        82: "R",
+        83: "S",
+        84: "T",
+        85: "U",
+        86: "V",
+        87: "W",
+        88: "X",
+        89: "Y",
+        90: "Z",
+
+        48: "0",
+        49: "1",
+        50: "2",
+        51: "3",
+        52: "4",
+        53: "5",
+        54: "6",
+        55: "7",
+        56: "8",
+        57: "9",
+      };
+
+      const key = keyNames[event.vk];
+
+      if (!key) return;
+
+      const parts = [];
+
+      if (event.ctrl) parts.push("Ctrl");
+      if (event.alt) parts.push("Alt");
+      if (event.shift) parts.push("Shift");
+      if (event.win) parts.push("Super");
+
+      parts.push(key);
+
+      const accelerator = parts.join("+");
+
+      for (const [action, configured] of Object.entries(settings.hotkeys)) {
+        if (!configured) continue;
+
+        if (configured.toLowerCase() === accelerator.toLowerCase()) {
+          const handlers = {
+            toggle: toggleOverlay,
+            manualRound: manualNewRound,
+            newSession: newGameSession,
+            prevRound: () => navRound("prev"),
+            nextRound: () => navRound("next"),
+            toolbar: () => togglePanel("toolbar"),
+            scratch: () => togglePanel("scratch"),
+            sessions: () => togglePanel("sessions"),
+          };
+
+          const handler = handlers[action];
+
+          if (handler) {
+            handler();
+          }
+
+          break;
+        }
+      }
+    },
+  });
+}
+
+function stopOverlayInput() {
+  overlayInput.stop();
 }
 
 // Opens the backdrop plus every panel marked showOnOpen in settings.
@@ -483,14 +771,20 @@ function hidePanelWindow(id) {
 // currently closed.
 function openOverlay() {
   overlayWantsOpen = true;
-  visiblePanels = new Set(PANEL_IDS.filter((id) => settings[id] && settings[id].showOnOpen));
+  visiblePanels = new Set(
+    PANEL_IDS.filter((id) => settings[id] && settings[id].showOnOpen),
+  );
+
   if (!backdropWin) {
     backdropWin = createBackdropWindow();
     wm.register(backdropWin);
   }
+
   backdropWin.show();
   visiblePanels.forEach((id) => showPanelWindow(id));
   overlayOpen = true;
+
+  startOverlayInput();
 }
 
 // Closes everything -- backdrop and every panel, regardless of which
@@ -498,6 +792,9 @@ function openOverlay() {
 // clicking the dim backdrop, or Esc from the notepad.
 function closeOverlay() {
   overlayWantsOpen = false;
+
+  stopOverlayInput();
+
   // Panels the user pinned (persistentPanels) are deliberately skipped
   // here -- that's the whole point of that pin: it stays open, visible,
   // and interactive even though the rest of the overlay (and the dim
@@ -567,7 +864,7 @@ function togglePanel(id) {
 }
 
 function navRound(direction) {
-  ensurePanelShown('notepad');
+  ensurePanelShown("notepad");
   session.navigate(direction);
   pushRoundToRenderer();
 }
@@ -582,11 +879,11 @@ function registerHotkeys() {
     toggle: toggleOverlay,
     manualRound: manualNewRound,
     newSession: newGameSession,
-    prevRound: () => navRound('prev'),
-    nextRound: () => navRound('next'),
-    toolbar: () => togglePanel('toolbar'),
-    scratch: () => togglePanel('scratch'),
-    sessions: () => togglePanel('sessions')
+    prevRound: () => navRound("prev"),
+    nextRound: () => navRound("next"),
+    toolbar: () => togglePanel("toolbar"),
+    scratch: () => togglePanel("scratch"),
+    sessions: () => togglePanel("sessions"),
   };
   for (const [key, handler] of Object.entries(handlers)) {
     const accel = settings.hotkeys[key];
@@ -594,13 +891,18 @@ function registerHotkeys() {
     try {
       const ok = globalShortcut.register(accel, handler);
       if (!ok) {
-        console.error(`Failed to register hotkey "${accel}" (${key}) -- it may already be in use by another app.`);
-      } 
+        console.error(
+          `Failed to register hotkey "${accel}" (${key}) -- it may already be in use by another app.`,
+        );
+      }
       // else {
-        // console.log(`[hotkeys] Registered "${accel}" for "${key}"`);
+      // console.log(`[hotkeys] Registered "${accel}" for "${key}"`);
       // }
     } catch (err) {
-      console.error(`Hotkey "${accel}" (${key}) is invalid and was skipped:`, err.message);
+      console.error(
+        `Hotkey "${accel}" (${key}) is invalid and was skipped:`,
+        err.message,
+      );
     }
   }
   // Tab is handled separately by TabCapture (dynamic, foreground-scoped),
@@ -610,7 +912,7 @@ function registerHotkeys() {
 // If a second launch is attempted while this instance is already
 // running, bring the main app window forward instead of letting two
 // copies coexist.
-app.on('second-instance', () => {
+app.on("second-instance", () => {
   if (mainWin) wm.showAndFocus(mainWin);
 });
 
@@ -625,14 +927,15 @@ app.whenReady().then(async () => {
 
   watcher = new RoundWatcher({
     onRoundChange: (round, meta) => {
-      if (meta && meta.outcome) session.setRoundOutcome(meta.concludedRound, meta.outcome);
+      if (meta && meta.outcome)
+        session.setRoundOutcome(meta.concludedRound, meta.outcome);
       session.newRound(round);
       pushRoundToRenderer();
     },
     onStateChange: (state) => {
       currentGameState = state;
       pushGameState(state);
-    }
+    },
   });
   await watcher.start();
   currentGameState = watcher.state;
@@ -641,7 +944,7 @@ app.whenReady().then(async () => {
     enabled: settings.tabCapture.enabled,
     notesDir: NOTES_DIR,
     getSessionId: () => session.id,
-    onCaptured: (filePath) => session.attachScoreboard(filePath)
+    onCaptured: (filePath) => session.attachScoreboard(filePath),
   });
   tabCapture.start();
 
@@ -679,10 +982,12 @@ app.whenReady().then(async () => {
 });
 
 // ---- IPC: notepad ----
-ipcMain.on('save-note', (_event, text) => { if (session) session.saveNote(text); });
-ipcMain.on('hide-overlay', () => closeOverlay());
-ipcMain.on('nav-round', (_event, direction) => navRound(direction));
-ipcMain.on('toggle-lock', () => {
+ipcMain.on("save-note", (_event, text) => {
+  if (session) session.saveNote(text);
+});
+ipcMain.on("hide-overlay", () => closeOverlay());
+ipcMain.on("nav-round", (_event, direction) => navRound(direction));
+ipcMain.on("toggle-lock", () => {
   locked = !locked;
   pushLockStateToAll();
   applyLockState();
@@ -692,19 +997,19 @@ ipcMain.on('toggle-lock', () => {
 // (only notepad and scratch, per the design). Each just flips that one
 // id in/out of persistentPanels and tells that panel's own window to
 // update its pin icon.
-ipcMain.on('notepad-toggle-persist', () => {
-  if (persistentPanels.has('notepad')) persistentPanels.delete('notepad');
-  else persistentPanels.add('notepad');
-  pushPersistState('notepad');
+ipcMain.on("notepad-toggle-persist", () => {
+  if (persistentPanels.has("notepad")) persistentPanels.delete("notepad");
+  else persistentPanels.add("notepad");
+  pushPersistState("notepad");
 });
-ipcMain.on('scratch-toggle-persist', () => {
-  if (persistentPanels.has('scratch')) persistentPanels.delete('scratch');
-  else persistentPanels.add('scratch');
-  pushPersistState('scratch');
+ipcMain.on("scratch-toggle-persist", () => {
+  if (persistentPanels.has("scratch")) persistentPanels.delete("scratch");
+  else persistentPanels.add("scratch");
+  pushPersistState("scratch");
 });
 
 // ---- IPC: backdrop ----
-ipcMain.on('backdrop-click', () => closeOverlay());
+ipcMain.on("backdrop-click", () => closeOverlay());
 
 // ---- IPC: toolbar ----
 // Each line here prints to the TERMINAL (this is main-process code, not
@@ -715,79 +1020,115 @@ ipcMain.on('backdrop-click', () => closeOverlay());
 // happens, the bug is inside whatever function is being called
 // (togglePanel, openSettingsWindow, etc.) -- next step would be adding
 // logging inside that function specifically.
-ipcMain.on('toolbar-open-notepad', () => { console.log('[toolbar-ipc] open-notepad received'); togglePanel('notepad'); });
-ipcMain.on('toolbar-open-scratch', () => { console.log('[toolbar-ipc] open-scratch received'); togglePanel('scratch'); });
-ipcMain.on('toolbar-open-sessions', () => { console.log('[toolbar-ipc] open-sessions received'); togglePanel('sessions'); });
-ipcMain.on('toolbar-open-browser', () => { console.log('[toolbar-ipc] open-browser received'); togglePanel('browser'); });
-ipcMain.on('toolbar-manual-round', () => { console.log('[toolbar-ipc] manual-round received'); manualNewRound(); });
-ipcMain.on('toolbar-close-overlay', () => { console.log('[toolbar-ipc] close-overlay received'); closeOverlay(); });
+ipcMain.on("toolbar-open-notepad", () => {
+  console.log("[toolbar-ipc] open-notepad received");
+  togglePanel("notepad");
+});
+ipcMain.on("toolbar-open-scratch", () => {
+  console.log("[toolbar-ipc] open-scratch received");
+  togglePanel("scratch");
+});
+ipcMain.on("toolbar-open-sessions", () => {
+  console.log("[toolbar-ipc] open-sessions received");
+  togglePanel("sessions");
+});
+ipcMain.on("toolbar-open-browser", () => {
+  console.log("[toolbar-ipc] open-browser received");
+  togglePanel("browser");
+});
+ipcMain.on("toolbar-manual-round", () => {
+  console.log("[toolbar-ipc] manual-round received");
+  manualNewRound();
+});
+ipcMain.on("toolbar-close-overlay", () => {
+  console.log("[toolbar-ipc] close-overlay received");
+  closeOverlay();
+});
 
 // ---- IPC: main window controls ----
 // Now that main-window.js is frame:false, there's no OS-provided
 // minimize/maximize/close -- these three replace exactly that, acting
 // directly on the mainWin BrowserWindow instance. Same pattern to reuse
 // if any OTHER window ever goes frameless and needs its own controls.
-ipcMain.on('main-window-minimize', () => { console.log('[main-window-ipc] minimize received'); if (mainWin) mainWin.minimize(); });
-ipcMain.on('main-window-toggle-maximize', () => {
-  console.log('[main-window-ipc] toggle-maximize received');
+ipcMain.on("main-window-minimize", () => {
+  console.log("[main-window-ipc] minimize received");
+  if (mainWin) mainWin.minimize();
+});
+ipcMain.on("main-window-toggle-maximize", () => {
+  console.log("[main-window-ipc] toggle-maximize received");
   if (!mainWin) return;
   if (mainWin.isMaximized()) mainWin.unmaximize();
   else mainWin.maximize();
 });
-ipcMain.on('main-window-close', () => { console.log('[main-window-ipc] close received'); if (mainWin) mainWin.close(); });
+ipcMain.on("main-window-close", () => {
+  console.log("[main-window-ipc] close received");
+  if (mainWin) mainWin.close();
+});
 
 // ---- IPC: scratch notepad ----
-ipcMain.handle('get-scratch', () => {
-  return fs.existsSync(SCRATCH_PATH) ? fs.readFileSync(SCRATCH_PATH, 'utf-8') : '';
+ipcMain.handle("get-scratch", () => {
+  return fs.existsSync(SCRATCH_PATH)
+    ? fs.readFileSync(SCRATCH_PATH, "utf-8")
+    : "";
 });
-ipcMain.on('scratch-save', (_event, text) => {
+ipcMain.on("scratch-save", (_event, text) => {
   if (!fs.existsSync(NOTES_DIR)) fs.mkdirSync(NOTES_DIR, { recursive: true });
   fs.writeFileSync(SCRATCH_PATH, text);
 });
-ipcMain.on('scratch-hide', () => {
-  hidePanelWindow('scratch');
-  visiblePanels.delete('scratch');
+ipcMain.on("scratch-hide", () => {
+  hidePanelWindow("scratch");
+  visiblePanels.delete("scratch");
   if (visiblePanels.size === 0) closeOverlay();
 });
 
 // ---- IPC: session browser ----
-ipcMain.handle('list-sessions', async () => {
+ipcMain.handle("list-sessions", async () => {
   if (!fs.existsSync(NOTES_DIR)) return [];
-  const files = fs.readdirSync(NOTES_DIR).filter((f) => f.endsWith('.json'));
-  return files.map((f) => {
-    try {
-      const data = JSON.parse(fs.readFileSync(path.join(NOTES_DIR, f), 'utf-8'));
-      const rounds = data.rounds || {};
-      // Won/lost tally, same logic as SessionManager.saveToDisk's markdown
-      // header -- surfaced here too so the session list can show a
-      // result badge without opening each file.
-      const tally = Object.values(rounds).reduce((acc, r) => {
-        if (r.outcome === 'won') acc.won += 1;
-        if (r.outcome === 'lost') acc.lost += 1;
-        return acc;
-      }, { won: 0, lost: 0 });
-      return {
-        id: data.id,
-        mdFile: f.replace(/\.json$/, '.md'),
-        roundCount: Object.keys(rounds).length,
-        startedAt: data.startedAt,
-        won: tally.won,
-        lost: tally.lost
-      };
-    } catch {
-      return null;
-    }
-  }).filter(Boolean).sort((a, b) => b.startedAt - a.startedAt);
+  const files = fs.readdirSync(NOTES_DIR).filter((f) => f.endsWith(".json"));
+  return files
+    .map((f) => {
+      try {
+        const data = JSON.parse(
+          fs.readFileSync(path.join(NOTES_DIR, f), "utf-8"),
+        );
+        const rounds = data.rounds || {};
+        // Won/lost tally, same logic as SessionManager.saveToDisk's markdown
+        // header -- surfaced here too so the session list can show a
+        // result badge without opening each file.
+        const tally = Object.values(rounds).reduce(
+          (acc, r) => {
+            if (r.outcome === "won") acc.won += 1;
+            if (r.outcome === "lost") acc.lost += 1;
+            return acc;
+          },
+          { won: 0, lost: 0 },
+        );
+        return {
+          id: data.id,
+          mdFile: f.replace(/\.json$/, ".md"),
+          roundCount: Object.keys(rounds).length,
+          startedAt: data.startedAt,
+          won: tally.won,
+          lost: tally.lost,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.startedAt - a.startedAt);
 });
-ipcMain.on('open-session', (_event, mdFile) => shell.openPath(path.join(NOTES_DIR, mdFile)));
-ipcMain.on('sessions-hide', () => {
-  hidePanelWindow('sessions');
-  visiblePanels.delete('sessions');
+ipcMain.on("open-session", (_event, mdFile) =>
+  shell.openPath(path.join(NOTES_DIR, mdFile)),
+);
+ipcMain.on("sessions-hide", () => {
+  hidePanelWindow("sessions");
+  visiblePanels.delete("sessions");
   if (visiblePanels.size === 0) closeOverlay();
 });
 
 // ---- IPC: browser ----
-ipcMain.on('browser-go-back', () => {
+ipcMain.on("browser-go-back", () => {
   if (!browserWin) return;
 
   const webView = browserWin.browserWebView;
@@ -797,7 +1138,7 @@ ipcMain.on('browser-go-back', () => {
   }
 });
 
-ipcMain.on('browser-go-forward', () => {
+ipcMain.on("browser-go-forward", () => {
   if (!browserWin) return;
 
   const webView = browserWin.browserWebView;
@@ -807,7 +1148,7 @@ ipcMain.on('browser-go-forward', () => {
   }
 });
 
-ipcMain.on('browser-reload', () => {
+ipcMain.on("browser-reload", () => {
   if (!browserWin) return;
 
   const webView = browserWin.browserWebView;
@@ -817,7 +1158,7 @@ ipcMain.on('browser-reload', () => {
   }
 });
 
-ipcMain.on('browser-navigate', (_event, url) => {
+ipcMain.on("browser-navigate", (_event, url) => {
   if (!browserWin) return;
 
   const webView = browserWin.browserWebView;
@@ -827,7 +1168,7 @@ ipcMain.on('browser-navigate', (_event, url) => {
   }
 });
 
-ipcMain.on('browser-close', () => {
+ipcMain.on("browser-close", () => {
   if (!browserWin) return;
 
   browserWin.hide();
@@ -839,14 +1180,14 @@ ipcMain.on('browser-close', () => {
 // embedded Settings tab in the main window uses this to load its first
 // render, since (unlike the floating overlay panel) it can already be
 // on-screen before any "open settings" action has fired a push.
-ipcMain.handle('get-settings', () => JSON.parse(JSON.stringify(settings)));
+ipcMain.handle("get-settings", () => JSON.parse(JSON.stringify(settings)));
 
-ipcMain.on('preview-theme', (_event, theme) => {
+ipcMain.on("preview-theme", (_event, theme) => {
   // console.log('[theme-preview] IPC received:', theme);
   previewThemeToAll(theme);
 });
 
-ipcMain.on('save-settings', (_event, data) => {
+ipcMain.on("save-settings", (_event, data) => {
   const merged = settingsStore.load(SETTINGS_PATH); // start from valid defaults+existing
   settings = {
     hotkeys: { ...settingsStore.DEFAULTS.hotkeys, ...(data.hotkeys || {}) },
@@ -855,15 +1196,15 @@ ipcMain.on('save-settings', (_event, data) => {
     toolbar: { ...merged.toolbar, ...(data.toolbar || {}) },
     scratch: { ...merged.scratch, ...(data.scratch || {}) },
     sessions: { ...merged.sessions, ...(data.sessions || {}) },
-    tabCapture: { ...merged.tabCapture, ...(data.tabCapture || {}) }
+    tabCapture: { ...merged.tabCapture, ...(data.tabCapture || {}) },
   };
   persistSettings();
 
   registerHotkeys();
-  if (notepadWin) applyBounds(notepadWin, 'notepad');
-  if (toolbarWin) applyBounds(toolbarWin, 'toolbar');
-  if (scratchWin) applyBounds(scratchWin, 'scratch');
-  if (sessionsWin) applyBounds(sessionsWin, 'sessions');
+  if (notepadWin) applyBounds(notepadWin, "notepad");
+  if (toolbarWin) applyBounds(toolbarWin, "toolbar");
+  if (scratchWin) applyBounds(scratchWin, "scratch");
+  if (sessionsWin) applyBounds(sessionsWin, "sessions");
   pushAppearance();
   pushHotkeys();
   pushThemeToAll();
@@ -874,11 +1215,11 @@ ipcMain.on('save-settings', (_event, data) => {
 // Alt+F4 on a non-main window, etc.) BEFORE any window's 'close' handler
 // runs -- this is what lets the main window's close handler tell a real
 // quit apart from just clicking the X to hide it.
-app.on('before-quit', () => {
+app.on("before-quit", () => {
   isQuitting = true;
 });
 
-app.on('will-quit', async () => {
+app.on("will-quit", async () => {
   globalShortcut.unregisterAll();
   if (watcher) await watcher.stop();
   if (tabCapture) tabCapture.stop();
@@ -886,6 +1227,6 @@ app.on('will-quit', async () => {
   if (tray) tray.destroy();
 });
 
-app.on('window-all-closed', () => {
+app.on("window-all-closed", () => {
   app.quit();
 });
