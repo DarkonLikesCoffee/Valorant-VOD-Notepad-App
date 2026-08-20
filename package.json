@@ -1,0 +1,62 @@
+{
+  "name": "valorant-vod-notepad",
+  "version": "0.1.0",
+  "description": "Standalone build: notepad overlay with OCR-based auto round detection",
+  "main": "providers/standalone/main.js",
+  "engines": {
+    "node": ">=18.0.0 <25.0.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "calibrate": "node providers/standalone/calibrate.js",
+    "postinstall": "patch-package && node scripts/rebuild-optional.js",
+    "setup": "npm install --ignore-scripts && patch-package && node node_modules/electron/install.js && node scripts/rebuild-optional.js",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {
+    "jimp": "^0.22.12",
+    "node-window-manager": "^2.2.4",
+    "ps-list": "^7.2.0",
+    "screenshot-desktop": "^1.15.0",
+    "tesseract.js": "^5.1.0"
+  },
+  "optionalDependencies": {
+    "active-win": "^8.2.1"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "electron": "^31.0.0",
+    "electron-builder": "^25.1.8",
+    "patch-package": "^8.0.1"
+  },
+  "allowScripts": {
+    "active-win@8.2.1": true,
+    "electron@31.7.7": true,
+    "tesseract.js@5.1.1": true
+  },
+  "build": {
+    "appId": "com.darkon.valorant-vod-notepad",
+    "productName": "Valorant VOD Notepad",
+    "files": [
+      "core/**/*",
+      "providers/standalone/**/*",
+      "!providers/standalone/*.png",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/node_modules/tesseract.js/**/*",
+      "**/node_modules/tesseract.js-core/**/*",
+      "**/node_modules/*.node",
+      "**/node_modules/node-window-manager/**/*",
+      "**/node_modules/active-win/**/*",
+      "**/node_modules/screenshot-desktop/**/*"
+    ],
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
