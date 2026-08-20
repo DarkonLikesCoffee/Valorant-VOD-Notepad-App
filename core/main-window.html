@@ -918,6 +918,26 @@
         color: var(--win);
         min-height: 16px;
       }
+
+      .session-match-details {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .session-general-comment {
+        margin-bottom: 30px;
+      }
+
+      .session-general-comment-body {
+        margin-top: 8px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--foreground);
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
     </style>
   </head>
   <body>
@@ -2013,6 +2033,34 @@
           return;
         }
 
+        const details = await window.mainApp.getSessionDetails(id);
+
+        const sessionDetails = details || {};
+
+        const displayValue = (value) => {
+          return value !== null && value !== undefined && value !== ""
+            ? value
+            : "Not set";
+        };
+
+        const displayKDA =
+          sessionDetails.kills !== null &&
+          sessionDetails.kills !== undefined &&
+          sessionDetails.deaths !== null &&
+          sessionDetails.deaths !== undefined &&
+          sessionDetails.assists !== null &&
+          sessionDetails.assists !== undefined
+            ? `${sessionDetails.kills} / ${sessionDetails.deaths} / ${sessionDetails.assists}`
+            : "Not set";
+
+        const displaySide = sessionDetails.firstHalfSide
+          ? sessionDetails.firstHalfSide.toLowerCase() === "attack"
+            ? "Attack"
+            : sessionDetails.firstHalfSide.toLowerCase() === "defense"
+              ? "Defense"
+              : sessionDetails.firstHalfSide
+          : "Not set";
+
         const rounds = Object.entries(session.rounds || {})
           .map(([number, round]) => ({
             number: Number(number),
@@ -2056,7 +2104,38 @@
         </div>
       </div>
 
-      <div class="session-detail-stats">
+      <div class="session-detail-stats session-match-details">
+
+        <div class="detail-stat">
+          <span>MAP</span>
+          <strong>${displayValue(sessionDetails.map)}</strong>
+        </div>
+
+        <div class="detail-stat">
+          <span>AGENT</span>
+          <strong>${displayValue(sessionDetails.agent)}</strong>
+        </div>
+
+        <div class="detail-stat">
+          <span>MODE</span>
+          <strong>${displayValue(sessionDetails.gameMode)}</strong>
+        </div>
+
+        <div class="detail-stat">
+          <span>RANK</span>
+          <strong>${displayValue(sessionDetails.rank)}</strong>
+        </div>
+
+        <div class="detail-stat">
+          <span>K / D / A</span>
+          <strong>${displayKDA}</strong>
+        </div>
+
+        <div class="detail-stat">
+          <span>FIRST HALF</span>
+          <strong>${displaySide}</strong>
+        </div>
+
         <div class="detail-stat">
           <span>ROUNDS</span>
           <strong>${rounds.length}</strong>
@@ -2067,16 +2146,20 @@
           <strong>${notesCount}</strong>
         </div>
 
-        <div class="detail-stat">
-          <span>STARTED</span>
-          <strong>${started}</strong>
-        </div>
+      </div>
 
-        <div class="detail-stat">
-          <span>ENDED</span>
-          <strong>${ended}</strong>
+      ${
+        sessionDetails.generalComment && sessionDetails.generalComment.trim()
+          ? `
+      <div class="session-general-comment">
+        <div class="section-label">General Comment</div>
+        <div class="session-general-comment-body">
+          ${sessionDetails.generalComment}
         </div>
       </div>
+    `
+          : ""
+      }
 
       <div class="round-review">
         <div class="section-label">Round-by-Round Review</div>
