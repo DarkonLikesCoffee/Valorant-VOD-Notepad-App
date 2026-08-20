@@ -49,6 +49,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3 4 6 4 9s-1 6-4 9"/><path d="M12 3c-3 3-4 6-4 9s1 6 4 9"/></svg>
     </button>
     <span class="sep"></span>
+    <button class="icon-btn" id="btnStartSession" title="Start session" aria-label="Start session">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg>
+    </button>
+    <button class="icon-btn danger" id="btnEndSession" title="End session" aria-label="End session">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><rect x="9" y="9" width="6" height="6"/></svg>
+    </button>
     <button class="icon-btn" id="btnRound" title="Manual round bump" aria-label="Manual round bump">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 5l7 7-7 7M5 12h14"/></svg>
     </button>
@@ -66,6 +72,8 @@
     document.getElementById('btnScratch').addEventListener('click', () => window.toolbarApi.openScratch());
     document.getElementById('btnSessions').addEventListener('click', () => window.toolbarApi.openSessions());
     document.getElementById('btnBrowser').addEventListener('click', () => window.toolbarApi.openBrowser());
+    document.getElementById('btnStartSession').addEventListener('click', () => window.toolbarApi.startSession());
+    document.getElementById('btnEndSession').addEventListener('click', () => window.toolbarApi.endSession());
     document.getElementById('btnRound').addEventListener('click', () => window.toolbarApi.manualRound());
     document.getElementById('btnLock').addEventListener('click', () => window.toolbarApi.toggleLock());
     document.getElementById('btnQuit').addEventListener('click', () => window.toolbarApi.closeOverlay());

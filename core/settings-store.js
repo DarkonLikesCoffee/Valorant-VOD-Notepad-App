@@ -8,6 +8,7 @@ const DEFAULTS = {
     toggle: 'Alt+N',
     manualRound: 'Alt+R',
     newSession: 'Alt+Shift+R',
+    endSession: 'Alt+Shift+E',
     prevRound: 'Alt+Left',
     nextRound: 'Alt+Right',
     settings: 'Alt+S',

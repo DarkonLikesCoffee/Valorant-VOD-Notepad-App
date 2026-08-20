@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('toolbarApi', {
   toggleLock: () => { console.log('[toolbar] toggleLock clicked'); ipcRenderer.send('toggle-lock'); },
   manualRound: () => { console.log('[toolbar] manualRound clicked'); ipcRenderer.send('toolbar-manual-round'); },
   closeOverlay: () => { console.log('[toolbar] closeOverlay clicked'); ipcRenderer.send('toolbar-close-overlay'); },
+  startSession: () => { console.log('[toolbar] startSession clicked'); ipcRenderer.send('start-session'); },
+  endSession: () => { console.log('[toolbar] endSession clicked'); ipcRenderer.send('toolbar-end-session'); },
   onLockState: (callback) => ipcRenderer.on('lock-state', (_event, locked) => callback(locked)),
   onTheme: (callback) => ipcRenderer.on('theme-data', (_event, theme) => callback(theme))
 });

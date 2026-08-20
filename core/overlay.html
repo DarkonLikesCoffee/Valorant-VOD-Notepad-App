@@ -1,214 +1,995 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8" />
-<link rel="stylesheet" href="theme.css" />
-<style>
-  html, body { background: transparent; height: 100%; overflow: hidden; }
-  #box { width: 100vw; height: 100vh; }
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="theme.css" />
+    <style>
+      html,
+      body {
+        background: transparent;
+        height: 100%;
+        overflow: hidden;
+      }
+      #box {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
 
-  #banner {
-    -webkit-app-region: drag;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: .04em;
-    padding: 5px 10px;
-    text-align: center;
-    display: none;
-    flex-shrink: 0;
-  }
-  #banner.show { display: block; }
-  #banner.waiting { background: color-mix(in oklch, #ffc107 15%, transparent); color: #ffc107; }
-  #banner.not-running { background: color-mix(in oklch, var(--loss) 15%, transparent); color: var(--loss); }
+      #no-session {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 28px;
+        text-align: center;
+        background: color-mix(
+          in oklch,
+          var(--overlay-panel) 92%,
+          var(--background)
+        );
+        -webkit-app-region: no-drag;
+      }
+      #no-session[hidden] {
+        display: none;
+      }
+      #no-session .empty-icon {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--overlay-border);
+        border-radius: 50%;
+        color: var(--accent);
+        background: color-mix(in oklch, var(--accent) 12%, transparent);
+      }
+      #no-session h1 {
+        margin: 2px 0 0;
+        font: 600 15px var(--font-display);
+      }
+      #no-session p {
+        max-width: 250px;
+        margin: 0 0 4px;
+        color: var(--overlay-muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      #start-session {
+        border: 0;
+        border-radius: var(--radius-sm);
+        padding: 8px 13px;
+        background: var(--accent);
+        color: var(--accent-foreground);
+        cursor: pointer;
+        font: 600 11px var(--font-mono);
+        letter-spacing: 0.04em;
+        -webkit-app-region: no-drag;
+      }
+      #start-session:hover {
+        filter: brightness(1.08);
+      }
 
-  #round-badge { background: var(--accent); color: var(--accent-foreground); }
-  #round-badge.won { background: var(--win); color: var(--background); }
-  #round-badge.lost { background: var(--loss); color: var(--background); }
+      #end-session-confirmation {
+        position: absolute;
+        inset: 0;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 28px;
+        text-align: center;
+        background: color-mix(
+          in oklch,
+          var(--overlay-panel) 92%,
+          var(--background)
+        );
+        -webkit-app-region: no-drag;
+      }
+      #end-session-confirmation[hidden] {
+        display: none;
+      }
+      #end-session-confirmation h1 {
+        margin: 0;
+        font: 600 15px var(--font-display);
+      }
+      #end-session-confirmation p {
+        max-width: 260px;
+        margin: 0 0 4px;
+        color: var(--overlay-muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .confirm-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .confirm-actions button {
+        min-width: 82px;
+        border-radius: var(--radius-sm);
+        padding: 8px 13px;
+        cursor: pointer;
+        font: 600 11px var(--font-mono);
+        letter-spacing: 0.04em;
+        -webkit-app-region: no-drag;
+      }
+      #cancel-end-session {
+        border: 1px solid var(--overlay-border);
+        background: transparent;
+        color: var(--overlay-foreground);
+      }
+      #confirm-end-session {
+        border: 0;
+        background: var(--accent);
+        color: var(--accent-foreground);
+      }
+      .confirm-actions button:hover {
+        filter: brightness(1.08);
+      }
 
-  #elapsed { font-family: var(--font-mono); font-size: 11px; color: var(--overlay-muted); }
+      #banner {
+        -webkit-app-region: drag;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        padding: 5px 10px;
+        text-align: center;
+        display: none;
+        flex-shrink: 0;
+      }
+      #banner.show {
+        display: block;
+      }
+      #banner.waiting {
+        background: color-mix(in oklch, #ffc107 15%, transparent);
+        color: #ffc107;
+      }
+      #banner.not-running {
+        background: color-mix(in oklch, var(--loss) 15%, transparent);
+        color: var(--loss);
+      }
 
-  #stats {
-    font-family: var(--font-mono); font-size: 10px; color: var(--overlay-muted);
-    padding: 0 10px; min-height: 0;
-  }
-  #stats:not(:empty) { padding-top: 6px; }
+      #round-badge {
+        background: var(--accent);
+        color: var(--accent-foreground);
+      }
+      #round-badge.won {
+        background: var(--win);
+        color: var(--background);
+      }
+      #round-badge.lost {
+        background: var(--loss);
+        color: var(--background);
+      }
 
-  #nav-wrap { display: flex; align-items: center; gap: 1px; }
-</style>
-</head>
-<body>
-  <div id="box" class="ov-panel">
-    <span class="ov-accent"></span>
-    <div id="banner"></div>
-    <div class="ov-head">
-      <span class="grip">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><circle cx="5" cy="3" r="1" fill="currentColor"/><circle cx="5" cy="8" r="1" fill="currentColor"/><circle cx="5" cy="13" r="1" fill="currentColor"/><circle cx="10" cy="3" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>
-      </span>
-      <span class="ov-title" style="display:flex; align-items:center; gap:6px; text-transform:none; letter-spacing:normal;">
-        <span id="round-badge" class="pill accent-solid">R0</span>
-        <span id="elapsed">00:00</span>
-      </span>
-      <div class="ov-head-right">
-        <div id="nav-wrap">
-          <button class="icon-btn" id="prevBtn" title="Previous round" aria-label="Previous round">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      #elapsed {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--overlay-muted);
+      }
+
+      #stats {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--overlay-muted);
+        padding: 0 10px;
+        min-height: 0;
+      }
+      #stats:not(:empty) {
+        padding-top: 6px;
+      }
+
+      #nav-wrap {
+        display: flex;
+        align-items: center;
+        gap: 1px;
+      }
+      #session-details-panel {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        background: #111;
+      }
+
+      #session-details-panel[hidden] {
+        display: none;
+      }
+
+      .session-details-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-display);
+        font-weight: 700;
+      }
+
+      .session-details-header button {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 20px;
+        cursor: pointer;
+      }
+
+      .session-details-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        overflow-y: auto;
+      }
+
+      .session-details-body label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        color: var(--overlay-muted);
+      }
+
+      .session-details-body input,
+      .session-details-body select,
+      .session-details-body textarea {
+        box-sizing: border-box;
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: var(--surface);
+        color: var(--text);
+        padding: 8px 9px;
+        font: inherit;
+        font-family: var(--font-body);
+        outline: none;
+      }
+
+      .session-details-body input:focus,
+      .session-details-body select:focus,
+      .session-details-body textarea:focus {
+        border-color: var(--accent);
+      }
+
+      .session-details-body textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      .session-kda {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .rank-selects {
+        display: flex;
+        gap: 8px;
+      }
+
+      .rank-selects select:first-child {
+        flex: 1;
+      }
+
+      .rank-selects select:last-child {
+        width: 70px;
+      }
+
+      .session-details-save-status {
+        margin-top: 4px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        color: var(--overlay-muted);
+        font-size: 10px;
+        font-family: var(--font-mono);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="box" class="ov-panel">
+      <span class="ov-accent"></span>
+      <!-- <div id="banner"></div> -->
+      <div class="ov-head">
+        <span class="grip">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+            <circle cx="5" cy="3" r="1" fill="currentColor" />
+            <circle cx="5" cy="8" r="1" fill="currentColor" />
+            <circle cx="5" cy="13" r="1" fill="currentColor" />
+            <circle cx="10" cy="3" r="1" fill="currentColor" />
+            <circle cx="10" cy="8" r="1" fill="currentColor" />
+            <circle cx="10" cy="13" r="1" fill="currentColor" />
+          </svg>
+        </span>
+        <span
+          class="ov-title"
+          style="
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: none;
+            letter-spacing: normal;
+          "
+        >
+          <span id="round-badge" class="pill accent-solid">R0</span>
+          <span id="elapsed">00:00</span>
+        </span>
+        <div class="ov-head-right">
+          <div id="nav-wrap">
+            <button
+              class="icon-btn"
+              id="prevBtn"
+              title="Previous round"
+              aria-label="Previous round"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn"
+              id="nextBtn"
+              title="Next round"
+              aria-label="Next round"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+          <button
+            class="icon-btn"
+            id="pinBtn"
+            title="Keep visible when overlay closes"
+            aria-label="Pin"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z" />
+            </svg>
           </button>
-          <button class="icon-btn" id="nextBtn" title="Next round" aria-label="Next round">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          <button id="session-details-btn" type="button">
+            Session Details
           </button>
         </div>
-        <button class="icon-btn" id="pinBtn" title="Keep visible when overlay closes" aria-label="Pin">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/></svg>
-        </button>
       </div>
-    </div>
-    <div id="stats"></div>
-    <div class="ov-body">
-      <div class="fmt-bar">
-        <button class="icon-btn" data-wrap="**|**" title="Bold (Ctrl+B)" aria-label="Bold">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h8a4 4 0 010 8H6zM6 12h9a4 4 0 010 8H6z"/></svg>
-        </button>
-        <button class="icon-btn" data-wrap="*|*" title="Italic (Ctrl+I)" aria-label="Italic">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 4h-9M14 20H5M15 4L9 20"/></svg>
-        </button>
-        <button class="icon-btn" data-line="# " title="Heading" aria-label="Heading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12"/></svg>
-        </button>
-        <button class="icon-btn" data-line="## " title="Subheading" aria-label="Subheading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6v12M11 6v12M4 12h7M15 18v-6.5a2 2 0 013.6-1.2c.3.4.4.9.4 1.4 0 1.6-4 3.4-4 6.3h4"/></svg>
-        </button>
+      <div id="stats"></div>
+      <div class="ov-body">
+        <div class="fmt-bar">
+          <button
+            class="icon-btn"
+            data-wrap="**|**"
+            title="Bold (Ctrl+B)"
+            aria-label="Bold"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M6 4h8a4 4 0 010 8H6zM6 12h9a4 4 0 010 8H6z" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            data-wrap="*|*"
+            title="Italic (Ctrl+I)"
+            aria-label="Italic"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M19 4h-9M14 20H5M15 4L9 20" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            data-line="# "
+            title="Heading"
+            aria-label="Heading"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M6 4v16M18 4v16M6 12h12" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
+            data-line="## "
+            title="Subheading"
+            aria-label="Subheading"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+            >
+              <path
+                d="M4 6v12M11 6v12M4 12h7M15 18v-6.5a2 2 0 013.6-1.2c.3.4.4.9.4 1.4 0 1.6-4 3.4-4 6.3h4"
+              />
+            </svg>
+          </button>
+        </div>
+        <textarea
+          id="note"
+          class="ov-textarea"
+          placeholder="Note what just happened…"
+        ></textarea>
       </div>
-      <textarea id="note" class="ov-textarea" placeholder="Note what just happened…"></textarea>
+      <div class="ov-foot">
+        <span style="display: flex; align-items: center; gap: 5px">
+          <span class="dot win"></span>
+          <span id="status">Auto-saved</span>
+        </span>
+        <span id="hotkeyHint">Alt+N close</span>
+      </div>
+      <section id="no-session" aria-live="polite">
+        <div class="empty-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M10 8l6 4-6 4z" />
+          </svg>
+        </div>
+        <h1>No active session</h1>
+        <p>Start a session to capture round notes in this notepad.</p>
+        <button id="start-session" type="button">Start Session</button>
+      </section>
+      <section id="session-details-panel" hidden>
+        <div class="session-details-header">
+          <span>Session Details</span>
+          <button id="session-details-close" type="button">×</button>
+        </div>
+
+        <div class="session-details-body">
+          <label>
+            Map
+            <select id="session-map">
+              <option value="">Not set</option>
+              <option value="Ascent">Ascent</option>
+              <option value="Bind">Bind</option>
+              <option value="Breeze">Breeze</option>
+              <option value="Corrode">Corrode</option>
+              <option value="Fracture">Fracture</option>
+              <option value="Haven">Haven</option>
+              <option value="Icebox">Icebox</option>
+              <option value="Lotus">Lotus</option>
+              <option value="Pearl">Pearl</option>
+              <option value="Split">Split</option>
+              <option value="Sunset">Sunset</option>
+            </select>
+          </label>
+
+          <label>
+            Agent
+            <select id="session-agent">
+              <option value="">Not set</option>
+              <option value="Astra">Astra</option>
+              <option value="Breach">Breach</option>
+              <option value="Brimstone">Brimstone</option>
+              <option value="Chamber">Chamber</option>
+              <option value="Clove">Clove</option>
+              <option value="Cypher">Cypher</option>
+              <option value="Deadlock">Deadlock</option>
+              <option value="Fade">Fade</option>
+              <option value="Gekko">Gekko</option>
+              <option value="Harbor">Harbor</option>
+              <option value="Iso">Iso</option>
+              <option value="Jett">Jett</option>
+              <option value="KAY/O">KAY/O</option>
+              <option value="Killjoy">Killjoy</option>
+              <option value="Neon">Neon</option>
+              <option value="Omen">Omen</option>
+              <option value="Phoenix">Phoenix</option>
+              <option value="Raze">Raze</option>
+              <option value="Reyna">Reyna</option>
+              <option value="Sage">Sage</option>
+              <option value="Skye">Skye</option>
+              <option value="Sova">Sova</option>
+              <option value="Tejo">Tejo</option>
+              <option value="Viper">Viper</option>
+              <option value="Vyse">Vyse</option>
+              <option value="Waylay">Waylay</option>
+              <option value="Yoru">Yoru</option>
+            </select>
+          </label>
+
+          <label>
+            Game Mode
+            <select id="session-game-mode">
+              <option value="">Not set</option>
+              <option value="Competitive">Competitive</option>
+              <option value="Unrated">Unrated</option>
+              <option value="Swiftplay">Swiftplay</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+
+          <label>
+            First Half
+            <select id="session-first-half">
+              <option value="">Not set</option>
+              <option value="attack">Attack</option>
+              <option value="defense">Defense</option>
+            </select>
+          </label>
+
+          <div class="session-kda">
+            <label>
+              Kills
+              <input id="session-kills" type="number" min="0" placeholder="—" />
+            </label>
+
+            <label>
+              Deaths
+              <input
+                id="session-deaths"
+                type="number"
+                min="0"
+                placeholder="—"
+              />
+            </label>
+
+            <label>
+              Assists
+              <input
+                id="session-assists"
+                type="number"
+                min="0"
+                placeholder="—"
+              />
+            </label>
+          </div>
+
+          <div class="rank-field">
+            <label>
+              Rank
+              <div class="rank-selects">
+                <select id="session-rank">
+                  <option value="">Not set</option>
+                  <option value="Iron">Iron</option>
+                  <option value="Bronze">Bronze</option>
+                  <option value="Silver">Silver</option>
+                  <option value="Gold">Gold</option>
+                  <option value="Platinum">Platinum</option>
+                  <option value="Diamond">Diamond</option>
+                  <option value="Ascendant">Ascendant</option>
+                  <option value="Immortal">Immortal</option>
+                  <option value="Radiant">Radiant</option>
+                </select>
+
+                <select id="session-rank-tier" hidden>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+            </label>
+          </div>
+
+          <label>
+            General Comment
+            <textarea
+              id="session-general-comment"
+              placeholder="Write anything you want to remember about this match..."
+            ></textarea>
+          </label>
+          <div
+            id="session-details-save-status"
+            class="session-details-save-status"
+          >
+            ✓ Auto-saved
+          </div>
+        </div>
+      </section>
+      <section
+        id="end-session-confirmation"
+        aria-modal="true"
+        aria-live="assertive"
+        hidden
+      >
+        <h1>End this session?</h1>
+        <p>
+          Your notes are already saved. You can start a new session afterwards.
+        </p>
+        <div class="confirm-actions">
+          <button id="cancel-end-session" type="button">Cancel</button>
+          <button id="confirm-end-session" type="button">Yes · Enter</button>
+        </div>
+      </section>
     </div>
-    <div class="ov-foot">
-      <span style="display:flex; align-items:center; gap:5px;">
-        <span class="dot win"></span>
-        <span id="status">Auto-saved</span>
-      </span>
-      <span id="hotkeyHint">Alt+N close</span>
-    </div>
-  </div>
 
-  <script src="theme-runtime.js"></script>
-  <script>
-    const roundBadge = document.getElementById('round-badge');
-    const elapsedEl = document.getElementById('elapsed');
-    const statsEl = document.getElementById('stats');
-    const noteEl = document.getElementById('note');
-    const statusEl = document.getElementById('status');
-    const bannerEl = document.getElementById('banner');
-    const hintEl = document.getElementById('hotkeyHint');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
+    <script src="theme-runtime.js"></script>
+    <script>
+      const roundBadge = document.getElementById("round-badge");
+      const elapsedEl = document.getElementById("elapsed");
+      const statsEl = document.getElementById("stats");
+      const noteEl = document.getElementById("note");
+      const statusEl = document.getElementById("status");
+      const bannerEl = document.getElementById("banner");
+      const hintEl = document.getElementById("hotkeyHint");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const noSessionEl = document.getElementById("no-session");
+      const startSessionBtn = document.getElementById("start-session");
+      const endSessionConfirmationEl = document.getElementById(
+        "end-session-confirmation",
+      );
+      const cancelEndSessionBtn = document.getElementById("cancel-end-session");
+      const confirmEndSessionBtn = document.getElementById(
+        "confirm-end-session",
+      );
 
-    let saveTimer = null;
+      const sessionDetailsBtn = document.getElementById("session-details-btn");
+      const sessionDetailsPanel = document.getElementById(
+        "session-details-panel",
+      );
+      const sessionDetailsSaveStatus = document.getElementById(
+        "session-details-save-status",
+      );
+      const sessionDetailsClose = document.getElementById(
+        "session-details-close",
+      );
+      const sessionRankSelect = document.getElementById("session-rank");
+      const sessionRankTierSelect =
+        document.getElementById("session-rank-tier");
 
-    window.overlay.onAppearance((a) => {
-      // Opacity setting fades the whole floating panel over gameplay
-      // footage (same intent as the old rgba-background version, just
-      // implemented with a plain CSS opacity now that the panel is a
-      // themed/blurred surface rather than a flat rgba fill).
-      document.getElementById('box').style.opacity = a.opacity;
-      noteEl.style.fontSize = a.textSize + 'px';
-    });
+      const sessionMap = document.getElementById("session-map");
+      const sessionAgent = document.getElementById("session-agent");
+      const sessionGameMode = document.getElementById("session-game-mode");
+      const sessionFirstHalf = document.getElementById("session-first-half");
+      const sessionKills = document.getElementById("session-kills");
+      const sessionDeaths = document.getElementById("session-deaths");
+      const sessionAssists = document.getElementById("session-assists");
+      const sessionRank = document.getElementById("session-rank");
+      const sessionRankTier = document.getElementById("session-rank-tier");
+      const sessionGeneralComment = document.getElementById(
+        "session-general-comment",
+      );
 
-    window.overlay.onTheme((theme) => applyTheme(theme));
+      let saveTimer = null;
+      let editingSessionId = null;
 
-    window.overlay.onHotkeys((hk) => {
-      hintEl.textContent = `${hk.toggle} close · ${hk.prevRound}/${hk.nextRound} nav`;
-    });
-
-    window.overlay.onGameState((state) => {
-      bannerEl.classList.remove('show', 'waiting', 'not-running');
-      if (state === 'not-running') {
-        bannerEl.textContent = 'Start a game to begin your live VOD review';
-        bannerEl.classList.add('show', 'not-running');
-      } else if (state === 'waiting') {
-        bannerEl.textContent = 'Waiting for match to start...';
-        bannerEl.classList.add('show', 'waiting');
-      }
-      // 'in-match' -> banner stays hidden. Note: this NEVER disables the
-      // textarea in any state -- it's informational only, so you can
-      // always type regardless of what state it's in.
-    });
-
-    window.overlay.onRoundData((data) => {
-      roundBadge.classList.remove('won', 'lost');
-      let label = `R${data.round}`;
-      if (data.outcome === 'won') { roundBadge.classList.add('won'); }
-      else if (data.outcome === 'lost') { roundBadge.classList.add('lost'); }
-      if (!data.isLive) label += ' ·past';
-      roundBadge.textContent = label;
-      elapsedEl.textContent = data.elapsed;
-      statsEl.textContent = data.stats ? JSON.stringify(data.stats) : '';
-      noteEl.value = data.note || '';
-      prevBtn.disabled = !data.hasPrev;
-      nextBtn.disabled = !data.hasNext;
-      noteEl.focus();
-      noteEl.setSelectionRange(noteEl.value.length, noteEl.value.length);
-      statusEl.textContent = 'Auto-saved';
-    });
-
-    // Just a visual toggle -- when persistent, this notepad keeps
-    // showing/updating even after the overlay (and everything else in
-    // it) closes -- see closeOverlay() in main.js.
-    window.overlay.onPersistState((persistent) => {
-      document.getElementById('pinBtn').classList.toggle('active', persistent);
-    });
-
-    noteEl.addEventListener('input', () => {
-      statusEl.textContent = 'Saving…';
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        window.overlay.saveNote(noteEl.value);
-        statusEl.textContent = 'Auto-saved';
-      }, 300);
-    });
-
-    function wrapSelection(pattern) {
-      const [before, after] = pattern.split('|');
-      const start = noteEl.selectionStart;
-      const end = noteEl.selectionEnd;
-      const selected = noteEl.value.slice(start, end);
-      noteEl.value = noteEl.value.slice(0, start) + before + selected + after + noteEl.value.slice(end);
-      noteEl.setSelectionRange(start + before.length, start + before.length + selected.length);
-      noteEl.dispatchEvent(new Event('input'));
-      noteEl.focus();
-    }
-
-    function prependLine(prefix) {
-      const start = noteEl.selectionStart;
-      const lineStart = noteEl.value.lastIndexOf('\n', start - 1) + 1;
-      noteEl.value = noteEl.value.slice(0, lineStart) + prefix + noteEl.value.slice(lineStart);
-      noteEl.setSelectionRange(start + prefix.length, start + prefix.length);
-      noteEl.dispatchEvent(new Event('input'));
-      noteEl.focus();
-    }
-
-    document.querySelectorAll('.fmt-bar button').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.wrap) wrapSelection(btn.dataset.wrap);
-        if (btn.dataset.line) prependLine(btn.dataset.line);
+      window.overlay.onAppearance((a) => {
+        // Opacity setting fades the whole floating panel over gameplay
+        // footage (same intent as the old rgba-background version, just
+        // implemented with a plain CSS opacity now that the panel is a
+        // themed/blurred surface rather than a flat rgba fill).
+        document.getElementById("box").style.opacity = a.opacity;
+        noteEl.style.fontSize = a.textSize + "px";
       });
-    });
 
-    prevBtn.addEventListener('click', () => window.overlay.navRound('prev'));
-    nextBtn.addEventListener('click', () => window.overlay.navRound('next'));
+      window.overlay.onTheme((theme) => applyTheme(theme));
 
-    noteEl.addEventListener('keydown', (e) => {
-      const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key.toLowerCase() === 'b') { e.preventDefault(); wrapSelection('**|**'); }
-      if (mod && e.key.toLowerCase() === 'i') { e.preventDefault(); wrapSelection('*|*'); }
-    });
+      window.overlay.onSessionState((active) => {
+        noSessionEl.hidden = active;
+        noteEl.disabled = !active;
+        if (!active) {
+          endSessionConfirmationEl.hidden = true;
+          clearSessionDetailsForm();
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
+        }
+      });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        window.overlay.saveNote(noteEl.value);
-        window.overlay.hide();
+      window.overlay.onEndSessionConfirmation((visible) => {
+        endSessionConfirmationEl.hidden = !visible;
+        if (visible) confirmEndSessionBtn.focus();
+      });
+
+      window.overlay.onHotkeys((hk) => {
+        hintEl.textContent = `${hk.toggle} close · ${hk.prevRound}/${hk.nextRound} nav`;
+      });
+
+      window.overlay.onGameState((state) => {
+        bannerEl.classList.remove("show", "waiting", "not-running");
+        if (state === "not-running") {
+          bannerEl.textContent = "Start a game to begin your live VOD review";
+          bannerEl.classList.add("show", "not-running");
+        } else if (state === "waiting") {
+          bannerEl.textContent = "Waiting for match to start...";
+          bannerEl.classList.add("show", "waiting");
+        }
+        // 'in-match' -> banner stays hidden. Note: this NEVER disables the
+        // textarea in any state -- it's informational only, so you can
+        // always type regardless of what state it's in.
+      });
+
+      window.overlay.onRoundData((data) => {
+        roundBadge.classList.remove("won", "lost");
+        let label = `R${data.round}`;
+        if (data.outcome === "won") {
+          roundBadge.classList.add("won");
+        } else if (data.outcome === "lost") {
+          roundBadge.classList.add("lost");
+        }
+        if (!data.isLive) label += " ·past";
+        roundBadge.textContent = label;
+        elapsedEl.textContent = data.elapsed;
+        statsEl.textContent = data.stats ? JSON.stringify(data.stats) : "";
+        noteEl.value = data.note || "";
+        prevBtn.disabled = !data.hasPrev;
+        nextBtn.disabled = !data.hasNext;
+        noteEl.focus();
+        noteEl.setSelectionRange(noteEl.value.length, noteEl.value.length);
+        statusEl.textContent = "Auto-saved";
+      });
+
+      // Just a visual toggle -- when persistent, this notepad keeps
+      // showing/updating even after the overlay (and everything else in
+      // it) closes -- see closeOverlay() in main.js.
+      window.overlay.onPersistState((persistent) => {
+        document
+          .getElementById("pinBtn")
+          .classList.toggle("active", persistent);
+      });
+
+      noteEl.addEventListener("input", () => {
+        statusEl.textContent = "Saving…";
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          window.overlay.saveNote(noteEl.value);
+          statusEl.textContent = "Auto-saved";
+        }, 300);
+      });
+
+      async function loadSessionDetails(sessionId = null) {
+        const details = await window.overlay.getSessionDetails(sessionId);
+
+        if (!details) {
+          clearSessionDetailsForm();
+          return;
+        }
+
+        sessionMap.value = details.map || "";
+        sessionAgent.value = details.agent || "";
+        sessionGameMode.value = details.gameMode || "";
+        sessionFirstHalf.value = details.firstHalfSide || "";
+
+        sessionKills.value = details.kills ?? "";
+        sessionDeaths.value = details.deaths ?? "";
+        sessionAssists.value = details.assists ?? "";
+
+        const rank = details.rank || "";
+
+        if (rank === "Radiant") {
+          sessionRank.value = "Radiant";
+          sessionRankTier.hidden = true;
+        } else {
+          const match = rank.match(
+            /^(Iron|Bronze|Silver|Gold|Platinum|Diamond|Ascendant|Immortal) ([123])$/,
+          );
+
+          if (match) {
+            sessionRank.value = match[1];
+            sessionRankTier.value = match[2];
+            sessionRankTier.hidden = false;
+          } else {
+            sessionRank.value = "";
+            sessionRankTier.value = "1";
+            sessionRankTier.hidden = true;
+          }
+        }
+
+        sessionGeneralComment.value = details.generalComment || "";
       }
-    });
 
-    document.getElementById('pinBtn').addEventListener('click', () => window.overlay.togglePersist());
-  </script>
-</body>
+      async function openSessionDetailsForEditing(sessionId) {
+        editingSessionId = sessionId;
+
+        await loadSessionDetails(sessionId);
+
+        sessionDetailsPanel.hidden = false;
+      }
+
+      window.overlay.onEditSessionDetails((sessionId) => {
+        openSessionDetailsForEditing(sessionId);
+      });
+
+      async function saveSessionDetails() {
+        sessionDetailsSaveStatus.textContent = "Saving…";
+
+        let rank = sessionRank.value;
+
+        if (rank && rank !== "Radiant" && sessionRankTier.value) {
+          rank += ` ${sessionRankTier.value}`;
+        }
+
+        if (editingSessionId) {
+          await window.overlay.updateClosedSessionDetails(editingSessionId, {
+            map: sessionMap.value,
+            agent: sessionAgent.value,
+            gameMode: sessionGameMode.value,
+            firstHalfSide: sessionFirstHalf.value,
+            kills: sessionKills.value,
+            deaths: sessionDeaths.value,
+            assists: sessionAssists.value,
+            rank,
+            generalComment: sessionGeneralComment.value,
+          });
+        } else {
+          await window.overlay.updateSessionDetails({
+            map: sessionMap.value,
+            agent: sessionAgent.value,
+            gameMode: sessionGameMode.value,
+            firstHalfSide: sessionFirstHalf.value,
+            kills: sessionKills.value,
+            deaths: sessionDeaths.value,
+            assists: sessionAssists.value,
+            rank,
+            generalComment: sessionGeneralComment.value,
+          });
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        sessionDetailsSaveStatus.textContent = "✓ Auto-saved";
+      }
+
+      function clearSessionDetailsForm() {
+        sessionMap.value = "";
+        sessionAgent.value = "";
+        sessionGameMode.value = "";
+        sessionFirstHalf.value = "";
+        sessionKills.value = "";
+        sessionDeaths.value = "";
+        sessionAssists.value = "";
+        sessionRank.value = "";
+        sessionRankTier.value = "1";
+        sessionRankTier.hidden = true;
+        sessionGeneralComment.value = "";
+      }
+
+      [
+        sessionMap,
+        sessionAgent,
+        sessionGameMode,
+        sessionFirstHalf,
+        sessionKills,
+        sessionDeaths,
+        sessionAssists,
+        sessionRank,
+        sessionRankTier,
+        sessionGeneralComment,
+      ].forEach((el) => {
+        el.addEventListener("change", saveSessionDetails);
+        el.addEventListener("input", saveSessionDetails);
+      });
+
+      function wrapSelection(pattern) {
+        const [before, after] = pattern.split("|");
+        const start = noteEl.selectionStart;
+        const end = noteEl.selectionEnd;
+        const selected = noteEl.value.slice(start, end);
+        noteEl.value =
+          noteEl.value.slice(0, start) +
+          before +
+          selected +
+          after +
+          noteEl.value.slice(end);
+        noteEl.setSelectionRange(
+          start + before.length,
+          start + before.length + selected.length,
+        );
+        noteEl.dispatchEvent(new Event("input"));
+        noteEl.focus();
+      }
+
+      function prependLine(prefix) {
+        const start = noteEl.selectionStart;
+        const lineStart = noteEl.value.lastIndexOf("\n", start - 1) + 1;
+        noteEl.value =
+          noteEl.value.slice(0, lineStart) +
+          prefix +
+          noteEl.value.slice(lineStart);
+        noteEl.setSelectionRange(start + prefix.length, start + prefix.length);
+        noteEl.dispatchEvent(new Event("input"));
+        noteEl.focus();
+      }
+
+      document.querySelectorAll(".fmt-bar button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.dataset.wrap) wrapSelection(btn.dataset.wrap);
+          if (btn.dataset.line) prependLine(btn.dataset.line);
+        });
+      });
+
+      prevBtn.addEventListener("click", () => window.overlay.navRound("prev"));
+      nextBtn.addEventListener("click", () => window.overlay.navRound("next"));
+      sessionDetailsBtn.addEventListener("click", async () => {
+        editingSessionId = null;
+        await loadSessionDetails();
+        sessionDetailsPanel.hidden = false;
+      });
+
+      sessionDetailsClose.addEventListener("click", () => {
+        sessionDetailsPanel.hidden = true;
+      });
+      startSessionBtn.addEventListener("click", () =>
+        window.overlay.startSession(),
+      );
+      confirmEndSessionBtn.addEventListener("click", () =>
+        window.overlay.confirmEndSession(),
+      );
+      cancelEndSessionBtn.addEventListener("click", () =>
+        window.overlay.cancelEndSession(),
+      );
+      sessionRankSelect.addEventListener("change", () => {
+        const isRadiant = sessionRankSelect.value === "Radiant";
+        const hasRank = sessionRankSelect.value !== "";
+
+        sessionRankTierSelect.hidden = !hasRank || isRadiant;
+      });
+
+      noteEl.addEventListener("keydown", (e) => {
+        const mod = e.ctrlKey || e.metaKey;
+        if (mod && e.key.toLowerCase() === "b") {
+          e.preventDefault();
+          wrapSelection("**|**");
+        }
+        if (mod && e.key.toLowerCase() === "i") {
+          e.preventDefault();
+          wrapSelection("*|*");
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (!endSessionConfirmationEl.hidden) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            window.overlay.confirmEndSession();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            window.overlay.cancelEndSession();
+          }
+          return;
+        }
+        if (e.key === "Escape") {
+          window.overlay.saveNote(noteEl.value);
+          window.overlay.hide();
+        }
+      });
+
+      document
+        .getElementById("pinBtn")
+        .addEventListener("click", () => window.overlay.togglePersist());
+    </script>
+  </body>
 </html>

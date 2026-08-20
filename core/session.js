@@ -1,93 +1,182 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 function timestamp() {
-  return new Date().toISOString().replace(/[:.]/g, '-');
+  return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
 function mmss(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
-  const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
-  const s = String(totalSec % 60).padStart(2, '0');
+  const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
+  const s = String(totalSec % 60).padStart(2, "0");
   return `${m}:${s}`;
 }
 
 /**
- * SessionManager owns the round/notes data model, autosave, and markdown
- * export. It has no idea where round numbers come from — that's a
- * provider's job (see providers/standalone or providers/overwolf). It just
- * exposes newRound() / saveNote() and persists everything to disk.
+ * Owns one VOD-review session at a time.
  *
- * It also owns the "viewing round" concept: the notepad window can be
- * looking at a round that isn't necessarily the live one (browsing back
- * with prev/next, or staying locked on the round you're mid-sentence on
- * while a new round starts in the background). `round` is always the true
- * live round; `viewingRound` is what's currently shown in the notepad, or
- * null when nothing has it locked (i.e. the notepad is closed).
+ * Sessions are deliberately manual: starting/stopping the session is the
+ * user's decision. VALORANT opening, closing, crashing, losing connection,
+ * etc. never starts or ends a session automatically.
+ *
+ * The current session is persisted after every note/round change. If the app
+ * is closed while a session is ACTIVE, the same session is recovered on the
+ * next launch instead of creating a new one.
  */
 class SessionManager {
   constructor(notesDir) {
     this.notesDir = notesDir;
-    if (!fs.existsSync(this.notesDir)) fs.mkdirSync(this.notesDir, { recursive: true });
-    this.start();
+    if (!fs.existsSync(this.notesDir))
+      fs.mkdirSync(this.notesDir, { recursive: true });
+    this._resetEmpty();
+    this._recoverActive();
+  }
+
+  _resetEmpty() {
+    this.id = null;
+    this.startedAt = null;
+    this.endedAt = null;
+    this.status = "closed";
+    this.round = 0;
+    this.rounds = {};
+    this.viewingRound = null;
+
+    this.map = null;
+    this.agent = null;
+    this.gameMode = null;
+    this.kills = null;
+    this.deaths = null;
+    this.assists = null;
+    this.rank = null;
+    this.generalComment = "";
+    this.firstHalfSide = null;
+
+    this.jsonPath = null;
+    this.mdPath = null;
+  }
+
+  get active() {
+    return this.status === "active";
   }
 
   start() {
+    if (this.active) return false;
+
     const id = timestamp();
     this.id = id;
     this.startedAt = Date.now();
+    this.endedAt = null;
+    this.status = "active";
     this.round = 0;
-    this.rounds = { 0: { note: '', roundStartedAt: this.startedAt, stats: null } };
-    this.viewingRound = null; // null = notepad closed / not locked to anything
+    this.rounds = {
+      0: { note: "", roundStartedAt: this.startedAt, stats: null },
+    };
+    this.map = null;
+    this.agent = null;
+    this.gameMode = null;
+    this.kills = null;
+    this.deaths = null;
+    this.assists = null;
+    this.rank = null;
+    this.generalComment = "";
+    this.firstHalfSide = null;
+    this.viewingRound = null;
     this.jsonPath = path.join(this.notesDir, `session-${id}.json`);
     this.mdPath = path.join(this.notesDir, `session-${id}.md`);
     this.saveToDisk();
+    return true;
   }
 
-  // Move the LIVE round forward. `stats` is optional — a provider with
-  // richer data (like the future Overwolf/GEP provider) can pass it here;
-  // the standalone provider just passes null. This never moves the
-  // notepad's viewingRound — if it's locked to an earlier round (open and
-  // being typed in), it stays there until the notepad is closed and
-  // reopened. See openForViewing()/closeViewing().
+  end() {
+    if (!this.active) return false;
+    this.endedAt = Date.now();
+    this.status = "closed";
+    this.viewingRound = null;
+    this.saveToDisk();
+    return true;
+  }
+
+  _loadFromFile(file) {
+    try {
+      const jsonPath = path.join(this.notesDir, file);
+      const data = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+      if (data.status !== "active") return false;
+
+      this.id = data.id;
+      this.startedAt = data.startedAt;
+      this.endedAt = null;
+      this.status = "active";
+      this.round = Number(data.round) || 0;
+      this.rounds =
+        data.rounds && typeof data.rounds === "object" ? data.rounds : {};
+      this.map = data.map ?? null;
+      this.agent = data.agent ?? null;
+      this.gameMode = data.gameMode ?? null;
+      this.kills = data.kills ?? null;
+      this.deaths = data.deaths ?? null;
+      this.assists = data.assists ?? null;
+      this.rank = data.rank ?? null;
+      this.generalComment = data.generalComment ?? "";
+      this.firstHalfSide = data.firstHalfSide ?? null;
+      this.viewingRound = null;
+      this.jsonPath = jsonPath;
+      this.mdPath = path.join(this.notesDir, file.replace(/\.json$/, ".md"));
+      return true;
+    } catch (err) {
+      console.error("session: failed to recover", file, err.message);
+      return false;
+    }
+  }
+
+  _recoverActive() {
+    const files = fs
+      .readdirSync(this.notesDir)
+      .filter((f) => f.endsWith(".json"))
+      .sort()
+      .reverse();
+
+    for (const file of files) {
+      if (this._loadFromFile(file)) {
+        console.log(`[session] recovered active session ${this.id}`);
+        return;
+      }
+    }
+  }
+
   newRound(roundNumber, stats = null) {
-    if (roundNumber === this.round) return; // no-op, nothing changed
+    if (!this.active || roundNumber === this.round) return;
     this.round = roundNumber;
     this.rounds[roundNumber] = this.rounds[roundNumber] || {
-      note: '',
+      note: "",
       roundStartedAt: Date.now(),
-      stats
+      stats,
     };
     this.saveToDisk();
   }
 
-  // Call when the notepad window is shown. Locks viewingRound to whatever
-  // is live right now, so the notepad doesn't yank itself to a new round
-  // out from under you mid-sentence if one starts while it's open.
   openForViewing() {
+    if (!this.active) return;
     this.viewingRound = this.round;
   }
 
-  // Call when the notepad window is hidden/closed. Unlocks, so the next
-  // time it's opened it snaps to whatever's live at that moment.
   closeViewing() {
     this.viewingRound = null;
   }
 
   _sortedRoundNumbers() {
-    return Object.keys(this.rounds).map(Number).sort((a, b) => a - b);
+    return Object.keys(this.rounds)
+      .map(Number)
+      .sort((a, b) => a - b);
   }
 
-  // Move the viewing round to the previous/next round that has an entry.
-  // Only meaningful while the notepad is open (viewingRound locked) —
-  // a no-op otherwise.
   navigate(direction) {
-    if (this.viewingRound === null) return;
+    if (!this.active || this.viewingRound === null) return;
     const nums = this._sortedRoundNumbers();
     const idx = nums.indexOf(this.viewingRound);
     if (idx === -1) return;
-    if (direction === 'prev' && idx > 0) this.viewingRound = nums[idx - 1];
-    if (direction === 'next' && idx < nums.length - 1) this.viewingRound = nums[idx + 1];
+    if (direction === "prev" && idx > 0) this.viewingRound = nums[idx - 1];
+    if (direction === "next" && idx < nums.length - 1)
+      this.viewingRound = nums[idx + 1];
   }
 
   _targetRound() {
@@ -95,23 +184,27 @@ class SessionManager {
   }
 
   saveNote(text) {
-    this.rounds[this._targetRound()].note = text;
+    if (!this.active) return;
+    const target = this._targetRound();
+    if (!this.rounds[target]) {
+      this.rounds[target] = {
+        note: "",
+        roundStartedAt: Date.now(),
+        stats: null,
+      };
+    }
+    this.rounds[target].note = text;
     this.saveToDisk();
   }
 
-  // Records whether a round was won or lost. `outcome` is 'won' | 'lost'.
-  // Called by the round-watcher once it sees the score change (the round
-  // that just concluded is known at that point, not the new live one).
   setRoundOutcome(roundNumber, outcome) {
-    if (!this.rounds[roundNumber]) return;
+    if (!this.active || !this.rounds[roundNumber]) return;
     this.rounds[roundNumber].outcome = outcome;
     this.saveToDisk();
   }
 
-  // Attaches a scoreboard screenshot's file path to the currently LIVE
-  // round (not necessarily whatever the notepad is viewing) -- used by
-  // the optional Tab-triggered capture feature.
   attachScoreboard(filePath) {
+    if (!this.active) return;
     const r = this.rounds[this.round];
     if (!r) return;
     r.scoreboardPath = filePath;
@@ -119,8 +212,10 @@ class SessionManager {
   }
 
   currentRoundPayload() {
+    if (!this.active) return null;
     const target = this._targetRound();
     const r = this.rounds[target];
+    if (!r) return null;
     const nums = this._sortedRoundNumbers();
     const idx = nums.indexOf(target);
     return {
@@ -131,38 +226,129 @@ class SessionManager {
       outcome: r.outcome || null,
       isLive: target === this.round,
       hasPrev: idx > 0,
-      hasNext: idx !== -1 && idx < nums.length - 1
+      hasNext: idx !== -1 && idx < nums.length - 1,
     };
   }
 
+  updateDetails(details = {}) {
+    if (!this.active) return false;
+
+    if ("map" in details) this.map = details.map || null;
+    if ("agent" in details) this.agent = details.agent || null;
+    if ("gameMode" in details) this.gameMode = details.gameMode || null;
+    if ("kills" in details)
+      this.kills = details.kills === "" ? null : Number(details.kills);
+    if ("deaths" in details)
+      this.deaths = details.deaths === "" ? null : Number(details.deaths);
+    if ("assists" in details)
+      this.assists = details.assists === "" ? null : Number(details.assists);
+    if ("rank" in details) this.rank = details.rank || null;
+    if ("generalComment" in details)
+      this.generalComment = details.generalComment || "";
+    if ("firstHalfSide" in details)
+      this.firstHalfSide = details.firstHalfSide || null;
+
+    this.saveToDisk();
+    return true;
+  }
+
+  updateClosedSessionDetails(sessionId, details = {}) {
+    const files = fs
+      .readdirSync(this.notesDir)
+      .filter((file) => file.endsWith(".json"));
+
+    const file = files.find((file) => {
+      try {
+        const data = JSON.parse(
+          fs.readFileSync(path.join(this.notesDir, file), "utf8"),
+        );
+        return data.id === sessionId;
+      } catch {
+        return false;
+      }
+    });
+
+    if (!file) return false;
+
+    const jsonPath = path.join(this.notesDir, file);
+
+    try {
+      const data = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+
+      if ("map" in details) data.map = details.map || null;
+      if ("agent" in details) data.agent = details.agent || null;
+      if ("gameMode" in details) data.gameMode = details.gameMode || null;
+
+      if ("kills" in details)
+        data.kills = details.kills === "" ? null : Number(details.kills);
+
+      if ("deaths" in details)
+        data.deaths = details.deaths === "" ? null : Number(details.deaths);
+
+      if ("assists" in details)
+        data.assists = details.assists === "" ? null : Number(details.assists);
+
+      if ("rank" in details) data.rank = details.rank || null;
+
+      if ("generalComment" in details)
+        data.generalComment = details.generalComment || "";
+
+      if ("firstHalfSide" in details)
+        data.firstHalfSide = details.firstHalfSide || null;
+
+      fs.writeFileSync(jsonPath, JSON.stringify(data, null, 2));
+
+      return true;
+    } catch (err) {
+      console.error(
+        "session: failed to update closed session",
+        sessionId,
+        err.message,
+      );
+      return false;
+    }
+  }
+
   saveToDisk() {
+    if (!this.jsonPath || !this.mdPath) return;
     fs.writeFileSync(this.jsonPath, JSON.stringify(this, null, 2));
 
     const roundNums = this._sortedRoundNumbers();
-    const tally = roundNums.reduce((acc, n) => {
-      const o = this.rounds[n].outcome;
-      if (o === 'won') acc.won += 1;
-      if (o === 'lost') acc.lost += 1;
-      return acc;
-    }, { won: 0, lost: 0 });
+    const tally = roundNums.reduce(
+      (acc, n) => {
+        const o = this.rounds[n].outcome;
+        if (o === "won") acc.won += 1;
+        if (o === "lost") acc.lost += 1;
+        return acc;
+      },
+      { won: 0, lost: 0 },
+    );
 
     const lines = [
       `# Valorant VOD review notes — ${this.id}`,
-      '',
+      "",
+      `**Status: ${this.status === "active" ? "Active" : "Closed"}**`,
+      `**Started: ${new Date(this.startedAt).toLocaleString()}**`,
+      this.endedAt
+        ? `**Ended: ${new Date(this.endedAt).toLocaleString()}**`
+        : "",
       `**Current score: ${tally.won}-${tally.lost}**`,
-      ''
-    ];
+      "",
+    ].filter(Boolean);
+
     for (const n of roundNums) {
       const r = this.rounds[n];
       const elapsed = mmss(r.roundStartedAt - this.startedAt);
-      const outcomeLabel = r.outcome === 'won' ? ' — WON' : r.outcome === 'lost' ? ' — LOST' : '';
+      const outcomeLabel =
+        r.outcome === "won" ? " — WON" : r.outcome === "lost" ? " — LOST" : "";
       lines.push(`## Round ${n}${outcomeLabel}  (${elapsed} into session)`);
       if (r.stats) lines.push(`_${JSON.stringify(r.stats)}_`);
-      if (r.scoreboardPath) lines.push(`📸 Scoreboard: \`${r.scoreboardPath}\``);
-      lines.push(r.note.trim() ? r.note.trim() : '_(no note)_');
-      lines.push('');
+      if (r.scoreboardPath)
+        lines.push(`📸 Scoreboard: \`${r.scoreboardPath}\``);
+      lines.push(r.note.trim() ? r.note.trim() : "_(no note)_");
+      lines.push("");
     }
-    fs.writeFileSync(this.mdPath, lines.join('\n'));
+    fs.writeFileSync(this.mdPath, lines.join("\n"));
   }
 }
 

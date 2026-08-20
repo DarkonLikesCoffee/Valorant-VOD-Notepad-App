@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="theme.css" />
+<style>
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  #toast {
+    width: 100%; height: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 14px;
+    border: 1px solid var(--overlay-border); border-radius: var(--radius-lg);
+    background: var(--overlay-panel); color: var(--overlay-foreground);
+    box-shadow: 0 14px 35px rgba(0,0,0,.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .icon { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, transparent); }
+  .copy { min-width: 0; }
+  h1 { margin: 0 0 3px; font: 600 12px var(--font-display); letter-spacing: .03em; }
+  p { margin: 0; color: var(--overlay-muted); font: 10px/1.4 var(--font-mono); }
+  kbd { padding: 1px 5px; border: 1px solid var(--overlay-border); border-radius: 4px; color: var(--overlay-foreground); font: inherit; }
+</style>
+</head>
+<body>
+  <div id="toast">
+    <div class="icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><rect x="9" y="9" width="6" height="6"/></svg>
+    </div>
+    <div class="copy">
+      <h1>End session?</h1>
+      <p>Press <kbd>Enter</kbd> within 5 seconds to confirm.</p>
+    </div>
+  </div>
+  <script src="theme-runtime.js"></script>
+  <script>window.endSessionToast.onTheme((theme) => applyTheme(theme));</script>
+</body>
+</html>

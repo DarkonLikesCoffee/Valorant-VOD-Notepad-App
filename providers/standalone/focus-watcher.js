@@ -5,7 +5,7 @@ try {
   activeWin = null;
 }
 
-const GAME_WINDOW_HINTS = ['valorant'];
+const GAME_WINDOW_HINTS = ['discord'];
 
 // Watches the foreground window (same technique as tab-capture.js) and
 // calls onFocusChange(isValorantFocused) only when the REAL external
