@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100">
+<rect width="900" height="1100" fill="#10131f"/>
+<rect x="170" y="95" width="560" height="900" rx="22" fill="#171b2a" stroke="#414a68"/>
+<rect x="205" y="160" width="490" height="80" rx="10" fill="#0e1220"/>
+<rect x="205" y="270" width="490" height="600" rx="10" fill="#1d2233"/>
+<text x="450" y="125" fill="#a9a4ff" font-family="Arial" font-size="22" text-anchor="middle" letter-spacing="4">ROUNDLY / MOBILE</text>
+<text x="450" y="555" fill="#f4f4f7" font-family="Arial" font-size="27" text-anchor="middle">Replace with your</text>
+<text x="450" y="595" fill="#f4f4f7" font-family="Arial" font-size="27" text-anchor="middle">main app menu screenshot</text>
+</svg>

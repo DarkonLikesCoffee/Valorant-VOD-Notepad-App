@@ -1,0 +1,14 @@
+HERO IMAGE SETUP
+
+The homepage hero is image-first.
+
+Desktop:
+- assets/hero-desktop.svg
+- Intended as a wide composite showing multiple Roundly panels/overlays.
+
+Small screens (<= 760px):
+- assets/hero-mobile.svg
+- Intended as a single/main Roundly panel or menu.
+
+The <picture> element performs the swap automatically.
+Replace the placeholder SVGs with the real Roundly images when ready.
