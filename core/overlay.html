@@ -189,6 +189,36 @@
         align-items: center;
         gap: 1px;
       }
+
+      #session-details-btn {
+        height: 30px;
+        padding: 0 11px;
+        border: 1px solid var(--overlay-border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--overlay-foreground);
+        font: 600 10px var(--font-mono);
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        cursor: pointer;
+        -webkit-app-region: no-drag;
+        transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+      }
+
+      #session-details-btn:hover {
+        background: var(--elevated);
+        border-color: var(--accent);
+        color: var(--foreground);
+      }
+
+      #session-details-btn:active {
+        background: color-mix(in oklch, var(--accent) 12%, var(--surface));
+      }
+
+      #session-details-btn:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: 1px;
+      }
       #session-details-panel {
         position: absolute;
         inset: 0;
@@ -445,6 +475,10 @@
           id="note"
           class="ov-textarea"
           placeholder="Note what just happened…"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
         ></textarea>
       </div>
       <div class="ov-foot">
@@ -591,7 +625,6 @@
                   <option value="Platinum">Platinum</option>
                   <option value="Diamond">Diamond</option>
                   <option value="Ascendant">Ascendant</option>
-                  <option value="Immortal">Immortal</option>
                   <option value="Radiant">Radiant</option>
                 </select>
 
@@ -609,6 +642,10 @@
             <textarea
               id="session-general-comment"
               placeholder="Write anything you want to remember about this match..."
+              spellcheck="false"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
             ></textarea>
           </label>
           <div
@@ -685,7 +722,6 @@
       );
 
       let saveTimer = null;
-      let editingSessionId = null;
 
       window.overlay.onAppearance((a) => {
         // Opacity setting fades the whole floating panel over gameplay
@@ -770,8 +806,8 @@
         }, 300);
       });
 
-      async function loadSessionDetails(sessionId = null) {
-        const details = await window.overlay.getSessionDetails(sessionId);
+      async function loadSessionDetails() {
+        const details = await window.overlay.getSessionDetails();
 
         if (!details) {
           clearSessionDetailsForm();
@@ -794,7 +830,7 @@
           sessionRankTier.hidden = true;
         } else {
           const match = rank.match(
-            /^(Iron|Bronze|Silver|Gold|Platinum|Diamond|Ascendant|Immortal) ([123])$/,
+            /^(Iron|Bronze|Silver|Gold|Platinum|Diamond|Ascendant) ([123])$/,
           );
 
           if (match) {
@@ -811,18 +847,6 @@
         sessionGeneralComment.value = details.generalComment || "";
       }
 
-      async function openSessionDetailsForEditing(sessionId) {
-        editingSessionId = sessionId;
-
-        await loadSessionDetails(sessionId);
-
-        sessionDetailsPanel.hidden = false;
-      }
-
-      window.overlay.onEditSessionDetails((sessionId) => {
-        openSessionDetailsForEditing(sessionId);
-      });
-
       async function saveSessionDetails() {
         sessionDetailsSaveStatus.textContent = "Saving…";
 
@@ -832,31 +856,17 @@
           rank += ` ${sessionRankTier.value}`;
         }
 
-        if (editingSessionId) {
-          await window.overlay.updateClosedSessionDetails(editingSessionId, {
-            map: sessionMap.value,
-            agent: sessionAgent.value,
-            gameMode: sessionGameMode.value,
-            firstHalfSide: sessionFirstHalf.value,
-            kills: sessionKills.value,
-            deaths: sessionDeaths.value,
-            assists: sessionAssists.value,
-            rank,
-            generalComment: sessionGeneralComment.value,
-          });
-        } else {
-          await window.overlay.updateSessionDetails({
-            map: sessionMap.value,
-            agent: sessionAgent.value,
-            gameMode: sessionGameMode.value,
-            firstHalfSide: sessionFirstHalf.value,
-            kills: sessionKills.value,
-            deaths: sessionDeaths.value,
-            assists: sessionAssists.value,
-            rank,
-            generalComment: sessionGeneralComment.value,
-          });
-        }
+        await window.overlay.updateSessionDetails({
+          map: sessionMap.value,
+          agent: sessionAgent.value,
+          gameMode: sessionGameMode.value,
+          firstHalfSide: sessionFirstHalf.value,
+          kills: sessionKills.value,
+          deaths: sessionDeaths.value,
+          assists: sessionAssists.value,
+          rank,
+          generalComment: sessionGeneralComment.value,
+        });
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -934,7 +944,6 @@
       prevBtn.addEventListener("click", () => window.overlay.navRound("prev"));
       nextBtn.addEventListener("click", () => window.overlay.navRound("next"));
       sessionDetailsBtn.addEventListener("click", async () => {
-        editingSessionId = null;
         await loadSessionDetails();
         sessionDetailsPanel.hidden = false;
       });
