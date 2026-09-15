@@ -938,6 +938,257 @@
         line-height: 1.6;
         white-space: pre-wrap;
       }
+
+      /* ---- Session history: analysis-first detail view ---- */
+      .session-history-detail {
+        padding: 30px 34px 48px;
+        max-width: 1100px;
+        box-sizing: border-box;
+      }
+
+      .session-analysis-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .session-analysis-title {
+        min-width: 0;
+      }
+
+      .session-analysis-title h2 {
+        margin: 6px 0 4px;
+        font-family: var(--font-display);
+        font-size: clamp(28px, 3vw, 42px);
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .session-analysis-subtitle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px 12px;
+        color: var(--muted-foreground);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .session-analysis-score {
+        flex-shrink: 0;
+        text-align: right;
+      }
+
+      .session-analysis-score strong {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+
+      .session-analysis-score span {
+        display: block;
+        margin-top: 7px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted-foreground);
+      }
+
+      .session-facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin: 20px 0 28px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: color-mix(in oklch, var(--card) 65%, transparent);
+        overflow: hidden;
+      }
+
+      .session-fact {
+        flex: 1 1 120px;
+        min-width: 105px;
+        padding: 12px 14px;
+        border-right: 1px solid var(--border);
+      }
+
+      .session-fact:last-child {
+        border-right: none;
+      }
+
+      .session-fact span {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--muted-foreground);
+        font-family: var(--font-mono);
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+      }
+
+      .session-fact strong {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .session-analysis-section {
+        margin-top: 30px;
+      }
+
+      .session-section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+
+      .session-section-head .muted {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .session-round-flow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      .session-round-chip {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--muted);
+        color: var(--muted-foreground);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        cursor: pointer;
+        transition: transform 0.12s, border-color 0.12s, background 0.12s;
+      }
+
+      .session-round-chip:hover {
+        transform: translateY(-1px);
+        border-color: var(--border-strong);
+      }
+
+      .session-round-chip.won {
+        background: color-mix(in oklch, var(--win) 13%, var(--surface));
+        border-color: color-mix(in oklch, var(--win) 45%, var(--border));
+        color: var(--win);
+      }
+
+      .session-round-chip.lost {
+        background: color-mix(in oklch, var(--loss) 13%, var(--surface));
+        border-color: color-mix(in oklch, var(--loss) 45%, var(--border));
+        color: var(--loss);
+      }
+
+      .session-round-chip.active {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      .session-analysis-comment {
+        padding: 16px 0 4px;
+        color: var(--foreground);
+        font-size: 13px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+      }
+
+      .session-analysis-comment.empty {
+        color: var(--muted-foreground);
+        font-style: italic;
+      }
+
+      .session-round-list {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid var(--border);
+      }
+
+      .session-round-row {
+        display: grid;
+        grid-template-columns: 42px 62px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        min-height: 52px;
+        padding: 8px 4px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+
+      .session-round-row:hover,
+      .session-round-row.active {
+        background: color-mix(in oklch, var(--elevated) 65%, transparent);
+      }
+
+      .session-round-number {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted-foreground);
+      }
+
+      .session-round-result {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+      }
+
+      .session-round-result.won { color: var(--win); }
+      .session-round-result.lost { color: var(--loss); }
+
+      .session-round-note {
+        min-width: 0;
+        color: var(--foreground);
+        font-size: 12px;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .session-round-note.empty {
+        color: var(--muted-foreground);
+      }
+
+      @media (max-width: 700px) {
+        .session-history-detail { padding: 22px 18px 36px; }
+        .session-analysis-header { align-items: flex-start; }
+        .session-analysis-score strong { font-size: 30px; }
+        .session-fact { flex-basis: 33%; }
+      }
+
+      @media (max-width: 520px) {
+        .session-analysis-header { flex-direction: column; }
+        .session-analysis-score { text-align: left; }
+        .session-fact { flex-basis: 50%; }
+        .session-round-row { grid-template-columns: 34px 52px minmax(0, 1fr); gap: 8px; }
+      }
     </style>
   </head>
   <body>
@@ -1068,19 +1319,7 @@
             </div>
           </div>
           <div class="nav-bottom">
-            <div id="status-card">
-              <div class="dotline">
-                <span class="status-dot"><span class="core"></span></span>
-                <span class="status-label" id="status-label"
-                  >Overlay standby</span
-                >
-              </div>
-              <p>
-                Running in tray. Hotkeys stay live while you play — closing this
-                window won't quit the app.
-              </p>
-            </div>
-            <div class="nav-footline">
+<div class="nav-footline">
               <span>v5 · standalone</span>
               <span>tray active</span>
             </div>
@@ -1776,6 +2015,32 @@
 
         const details = await window.mainApp.getSessionDetails(id);
 
+        const sessionDetails = details || {};
+
+        const displayValue = (value) => {
+          return value !== null && value !== undefined && value !== ""
+            ? value
+            : "Not set";
+        };
+
+        const displayKDA =
+          sessionDetails.kills !== null &&
+          sessionDetails.kills !== undefined &&
+          sessionDetails.deaths !== null &&
+          sessionDetails.deaths !== undefined &&
+          sessionDetails.assists !== null &&
+          sessionDetails.assists !== undefined
+            ? `${sessionDetails.kills} / ${sessionDetails.deaths} / ${sessionDetails.assists}`
+            : "Not set";
+
+        const displaySide = sessionDetails.firstHalfSide
+          ? sessionDetails.firstHalfSide.toLowerCase() === "attack"
+            ? "Attack"
+            : sessionDetails.firstHalfSide.toLowerCase() === "defense"
+              ? "Defense"
+              : sessionDetails.firstHalfSide
+          : "Not set";
+
         if (!details) {
           detailEl.innerHTML =
             '<div id="sess-empty">Unable to load session details.</div>';
@@ -2034,14 +2299,20 @@
         }
 
         const details = await window.mainApp.getSessionDetails(id);
-
         const sessionDetails = details || {};
 
-        const displayValue = (value) => {
-          return value !== null && value !== undefined && value !== ""
-            ? value
+        const escapeHtml = (value) =>
+          String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        const displayValue = (value) =>
+          value !== null && value !== undefined && value !== ""
+            ? escapeHtml(value)
             : "Not set";
-        };
 
         const displayKDA =
           sessionDetails.kills !== null &&
@@ -2050,7 +2321,7 @@
           sessionDetails.deaths !== undefined &&
           sessionDetails.assists !== null &&
           sessionDetails.assists !== undefined
-            ? `${sessionDetails.kills} / ${sessionDetails.deaths} / ${sessionDetails.assists}`
+            ? `${escapeHtml(sessionDetails.kills)} / ${escapeHtml(sessionDetails.deaths)} / ${escapeHtml(sessionDetails.assists)}`
             : "Not set";
 
         const displaySide = sessionDetails.firstHalfSide
@@ -2058,7 +2329,7 @@
             ? "Attack"
             : sessionDetails.firstHalfSide.toLowerCase() === "defense"
               ? "Defense"
-              : sessionDetails.firstHalfSide
+              : escapeHtml(sessionDetails.firstHalfSide)
           : "Not set";
 
         const rounds = Object.entries(session.rounds || {})
@@ -2082,125 +2353,127 @@
         const started = session.startedAt
           ? new Date(session.startedAt).toLocaleString()
           : "Unknown";
-
         const ended = session.endedAt
           ? new Date(session.endedAt).toLocaleString()
           : "Active";
 
+        const duration =
+          session.startedAt && session.endedAt
+            ? `${Math.max(0, Math.round((session.endedAt - session.startedAt) / 60000))} min`
+            : "Active";
+
+        const result = score.won === score.lost
+          ? "DRAW / INCOMPLETE"
+          : score.won > score.lost
+            ? "VICTORY"
+            : "DEFEAT";
+
+        const roundChips = rounds.length
+          ? rounds
+              .map(
+                (round) =>
+                  `<button type="button" class="session-round-chip ${round.outcome || ""}" data-round="${round.number}" title="Round ${round.number}">${round.number}</button>`,
+              )
+              .join("")
+          : '<span class="muted">No rounds recorded.</span>';
+
+        const roundRows = rounds.length
+          ? rounds
+              .map((round) => {
+                const hasNote = Boolean(round.note && round.note.trim());
+                const note = hasNote
+                  ? escapeHtml(round.note.trim())
+                  : "No note recorded";
+                return `
+                  <article class="session-round-row" data-round="${round.number}">
+                    <span class="session-round-number">R${round.number}</span>
+                    <span class="session-round-result ${round.outcome || ""}">${round.outcome ? round.outcome.toUpperCase() : "—"}</span>
+                    <span class="session-round-note ${hasNote ? "" : "empty"}">${note}</span>
+                  </article>
+                `;
+              })
+              .join("")
+          : '<div class="muted" style="padding:14px 0">No rounds recorded.</div>';
+
+        const generalComment = sessionDetails.generalComment?.trim();
+
         detailEl.innerHTML = `
-    <div class="session-detail-inner">
+          <div class="session-history-detail">
+            <header class="session-analysis-header">
+              <div class="session-analysis-title">
+                <div class="section-label">VOD Review / Session</div>
+                <h2>${displayValue(sessionDetails.map || "Session")}</h2>
+                <div class="session-analysis-subtitle">
+                  <span>${escapeHtml(started)}</span>
+                  <span>•</span>
+                  <span>${escapeHtml(duration)}</span>
+                  <span>•</span>
+                  <span>${displayValue(sessionDetails.gameMode)}</span>
+                </div>
+              </div>
+              <div class="session-analysis-score">
+                <strong>${score.won} — ${score.lost}</strong>
+                <span>${result}</span>
+              </div>
+            </header>
 
-      <div class="session-detail-header">
-        <div>
-          <div class="section-label">VOD Review</div>
-          <h2>Session</h2>
-          <div class="session-detail-meta">
-            ${started}
+            <div class="session-facts">
+              <div class="session-fact"><span>Agent</span><strong>${displayValue(sessionDetails.agent)}</strong></div>
+              <div class="session-fact"><span>Rank</span><strong>${displayValue(sessionDetails.rank)}</strong></div>
+              <div class="session-fact"><span>K / D / A</span><strong>${displayKDA}</strong></div>
+              <div class="session-fact"><span>First Half</span><strong>${displaySide}</strong></div>
+              <div class="session-fact"><span>Rounds</span><strong>${rounds.length}</strong></div>
+              <div class="session-fact"><span>Notes</span><strong>${notesCount}</strong></div>
+            </div>
+
+            <section class="session-analysis-section">
+              <div class="session-section-head">
+                <div class="section-label">Round Flow</div>
+                <span class="muted">Click a round to jump to its note</span>
+              </div>
+              <div class="session-round-flow">
+                ${roundChips}
+              </div>
+            </section>
+
+            <section class="session-analysis-section">
+              <div class="session-section-head">
+                <div class="section-label">General Comment</div>
+                <span class="muted">Session-level review</span>
+              </div>
+              <div class="session-analysis-comment ${generalComment ? "" : "empty"}">${generalComment ? escapeHtml(generalComment) : "No general comment recorded."}</div>
+            </section>
+
+            <section class="session-analysis-section">
+              <div class="session-section-head">
+                <div class="section-label">Round-by-Round Review</div>
+                <span class="muted">${escapeHtml(ended)}</span>
+              </div>
+              <div class="session-round-list">
+                ${roundRows}
+              </div>
+            </section>
           </div>
-        </div>
+        `;
 
-        <div class="session-detail-score">
-          ${score.won}-${score.lost}
-        </div>
-      </div>
+        const activateRound = (number) => {
+          document.querySelectorAll(".session-round-chip, .session-round-row").forEach((el) => {
+            el.classList.toggle("active", Number(el.dataset.round) === Number(number));
+          });
 
-      <div class="session-detail-stats session-match-details">
+          const row = detailEl.querySelector(`.session-round-row[data-round="${number}"]`);
+          if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+        };
 
-        <div class="detail-stat">
-          <span>MAP</span>
-          <strong>${displayValue(sessionDetails.map)}</strong>
-        </div>
+        detailEl.querySelectorAll(".session-round-chip").forEach((chip) => {
+          chip.addEventListener("click", () => activateRound(chip.dataset.round));
+        });
 
-        <div class="detail-stat">
-          <span>AGENT</span>
-          <strong>${displayValue(sessionDetails.agent)}</strong>
-        </div>
-
-        <div class="detail-stat">
-          <span>MODE</span>
-          <strong>${displayValue(sessionDetails.gameMode)}</strong>
-        </div>
-
-        <div class="detail-stat">
-          <span>RANK</span>
-          <strong>${displayValue(sessionDetails.rank)}</strong>
-        </div>
-
-        <div class="detail-stat">
-          <span>K / D / A</span>
-          <strong>${displayKDA}</strong>
-        </div>
-
-        <div class="detail-stat">
-          <span>FIRST HALF</span>
-          <strong>${displaySide}</strong>
-        </div>
-
-        <div class="detail-stat">
-          <span>ROUNDS</span>
-          <strong>${rounds.length}</strong>
-        </div>
-
-        <div class="detail-stat">
-          <span>NOTES</span>
-          <strong>${notesCount}</strong>
-        </div>
-
-      </div>
-
-      ${
-        sessionDetails.generalComment && sessionDetails.generalComment.trim()
-          ? `
-      <div class="session-general-comment">
-        <div class="section-label">General Comment</div>
-        <div class="session-general-comment-body">
-          ${sessionDetails.generalComment}
-        </div>
-      </div>
-    `
-          : ""
+        detailEl.querySelectorAll(".session-round-row").forEach((row) => {
+          row.addEventListener("click", () => activateRound(row.dataset.round));
+        });
       }
-
-      <div class="round-review">
-        <div class="section-label">Round-by-Round Review</div>
-
-        ${
-          rounds.length
-            ? rounds
-                .map(
-                  (round) => `
-              <article class="history-round">
-                <div class="history-round-head">
-                  <strong>R${round.number}</strong>
-                  ${
-                    round.outcome
-                      ? `<span class="${round.outcome === "won" ? "win" : "loss"}">
-                          ${round.outcome.toUpperCase()}
-                        </span>`
-                      : ""
-                  }
-                </div>
-
-                <div class="history-round-note">
-                  ${
-                    round.note && round.note.trim()
-                      ? round.note
-                      : '<span class="muted">No note</span>'
-                  }
-                </div>
-              </article>
-            `,
-                )
-                .join("")
-            : '<div class="muted">No rounds recorded.</div>'
-        }
-
-      </div>
-
-    </div>
-  `;
-      }
-      initSettingsForm({
+            initSettingsForm({
         load: (cb) => {
           window.mainApp.getSettings().then(cb); // first paint
           window.mainApp.onSettingsPush(cb); // stay in sync if changed via the overlay

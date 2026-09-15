@@ -1,0 +1,32 @@
+ROUNDLY WEBSITE CONTENT MAP — V14
+
+HOME
+- Hero: first impression / product definition
+- What is Roundly?
+- The problem
+- The workflow
+- Core features
+- Why VALORANT data?
+- Final project CTA
+
+PROJECT
+- Product overview
+- How it works
+- During the match
+- After the match
+- Why Riot/VALORANT data?
+- Current prototype vs planned Riot integration
+- Architecture
+- Product scope / compliance positioning
+- GitHub CTA
+
+PRIVACY
+- Existing legal structure retained; legal identity/controller information still needs to be finalized before production.
+
+TERMS
+- Existing legal structure retained; legal identity/service-provider information still needs to be finalized before production.
+
+Important:
+- Current prototype capabilities are described as current.
+- Riot/GEP/RSO capabilities are explicitly described as future/approved-integration scope.
+- No real-time tactical assistance is claimed.
