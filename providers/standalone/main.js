@@ -74,13 +74,6 @@ let focusWatcher = null;
 let settings = settingsStore.load(SETTINGS_PATH);
 let currentGameState = "not-running";
 
-let suppressBoundsSave = {
-  notepad: false,
-  toolbar: false,
-  scratch: false,
-  sessions: false,
-};
-
 // LOCK: position/size lock for every overlay window at once. Toolbar-only
 // concept -- toggled from the toolbar's lock button.
 let locked = false;
@@ -248,12 +241,6 @@ function createNotepad() {
       : defaultPositionFor(settings.notepad.position.preset, size);
   const pos = clampToScreen(rawPos, size);
 
-  // Suppress bounds-save during creation too, not just during a later
-  // windowBounds.apply() call -- Electron/Windows can fire a spurious initial
-  // resize/move once the window is actually shown, and without this guard
-  // that stray event would silently flip a brand-new "small"/"medium"/etc.
-  // preset back to "custom" even though the pixel size never changed.
-  suppressBoundsSave.notepad = true;
   notepadWin = createFloatingWindow({
     width: size.width,
     height: size.height,
@@ -266,9 +253,6 @@ function createNotepad() {
   });
   wm.register(notepadWin);
   windowBounds.watch(notepadWin, "notepad");
-  setTimeout(() => {
-    suppressBoundsSave.notepad = false;
-  }, 300);
 }
 
 // Manual fallback: bumps the LIVE round by one by hand, for whenever OCR
@@ -388,13 +372,9 @@ function createToolbar() {
       : defaultPositionFor(settings.toolbar.position.preset, size);
   const pos = clampToScreen(rawPos, size);
 
-  suppressBoundsSave.toolbar = true;
   toolbarWin = createToolbarWindow(size, pos);
   wm.register(toolbarWin);
   windowBounds.watch(toolbarWin, "toolbar");
-  setTimeout(() => {
-    suppressBoundsSave.toolbar = false;
-  }, 300);
 }
 
 // ---- Scratch notepad ----
@@ -407,13 +387,9 @@ function ensureScratchWindow() {
       ? { x: settings.scratch.position.x, y: settings.scratch.position.y }
       : defaultPositionFor(settings.scratch.position.preset, size);
   const pos = clampToScreen(rawPos, size);
-  suppressBoundsSave.scratch = true;
   scratchWin = createScratchWindow(size, pos);
   wm.register(scratchWin);
   windowBounds.watch(scratchWin, "scratch");
-  setTimeout(() => {
-    suppressBoundsSave.scratch = false;
-  }, 300);
 }
 
 function loadScratchIntoWindow() {
@@ -432,13 +408,9 @@ function ensureSessionsWindow() {
       ? { x: settings.sessions.position.x, y: settings.sessions.position.y }
       : defaultPositionFor(settings.sessions.position.preset, size);
   const pos = clampToScreen(rawPos, size);
-  suppressBoundsSave.sessions = true;
   sessionsWin = createSessionsWindow(size, pos);
   wm.register(sessionsWin);
   windowBounds.watch(sessionsWin, "sessions");
-  setTimeout(() => {
-    suppressBoundsSave.sessions = false;
-  }, 300);
 }
 
 // ---- Browser browser ----

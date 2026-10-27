@@ -101,3 +101,62 @@ test("watch ignores applied bounds and persists only the changed dimension", asy
   );
   assert.equal(persistCount, 2);
 });
+
+
+test("watch ignores native creation events against the initial geometry", async () => {
+  const settings = createSettings();
+  let persistCount = 0;
+  const handlers = {};
+  const win = {
+    getBounds: () => ({ x: 100, y: 20, width: 420, height: 360 }),
+    on: (eventName, handler) => {
+      handlers[eventName] = handler;
+    },
+  };
+  const manager = createWindowBounds(settings, () => {
+    persistCount += 1;
+  });
+
+  manager.watch(win, "notepad");
+  handlers.move();
+  handlers.resize();
+  await new Promise((resolve) => setTimeout(resolve, 15));
+
+  assert.equal(persistCount, 0);
+  assert.equal(settings.notepad.position.mode, "preset");
+  assert.equal(settings.notepad.size.mode, "preset");
+});
+
+test("apply cancels a pending drag save so stale events cannot overwrite settings", async () => {
+  const settings = createSettings();
+  let persistCount = 0;
+  let bounds = { x: 100, y: 20, width: 420, height: 360 };
+  const handlers = {};
+  const win = {
+    getBounds: () => ({ ...bounds }),
+    setBounds: (next) => {
+      bounds = { ...next };
+    },
+    on: (eventName, handler) => {
+      handlers[eventName] = handler;
+    },
+  };
+  const manager = createWindowBounds(settings, () => {
+    persistCount += 1;
+  });
+
+  manager.watch(win, "notepad");
+  bounds = { ...bounds, x: 240, y: 160 };
+  handlers.move();
+
+  // A user-saved preset is applied before the event debounce expires.
+  settings.notepad.position = { mode: "preset", preset: "bottom-left", x: null, y: null };
+  manager.apply(win, "notepad");
+  await new Promise((resolve) => setTimeout(resolve, 15));
+
+  assert.equal(persistCount, 0);
+  assert.equal(settings.notepad.position.mode, "preset");
+  assert.equal(settings.notepad.position.preset, "bottom-left");
+  assert.equal(bounds.x, 100);
+  assert.equal(bounds.y, 20);
+});
