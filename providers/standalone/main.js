@@ -34,6 +34,7 @@ const { registerMainWindowIpc } = require("../../core/main-window-ipc");
 const { registerBrowserIpc } = require("../../core/browser-ipc");
 const { ScratchStore } = require("../../core/scratch-store");
 const { registerScratchIpc } = require("../../core/scratch-ipc");
+const { registerConfiguredHotkeys } = require("../../core/hotkey-registry");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -715,11 +716,7 @@ function navRound(direction) {
 }
 
 // ---- Hotkeys ----
-// Every register() call is wrapped in try/catch -- a malformed
-// accelerator string must never crash the whole app (this is exactly
-// what happened before: an invalid saved hotkey took the process down).
 function registerHotkeys() {
-  globalShortcut.unregisterAll();
   const handlers = {
     toggle: toggleOverlay,
     manualRound: manualNewRound,
@@ -731,32 +728,18 @@ function registerHotkeys() {
     scratch: () => togglePanel("scratch"),
     sessions: () => togglePanel("sessions"),
   };
-  for (const [key, handler] of Object.entries(handlers)) {
-    const accel = settings.hotkeys[key];
-    if (!accel) continue;
-    try {
-      const ok = globalShortcut.register(accel, handler);
-      if (!ok) {
-        console.error(
-          `Failed to register hotkey "${accel}" (${key}) -- it may already be in use by another app.`,
-        );
-      }
-      // else {
-      // console.log(`[hotkeys] Registered "${accel}" for "${key}"`);
-      // }
-    } catch (err) {
-      console.error(
-        `Hotkey "${accel}" (${key}) is invalid and was skipped:`,
-        err.message,
-      );
-    }
-  }
-  // unregisterAll() above also removes the temporary Enter confirmation
-  // shortcut, so restore it if settings are saved mid-confirmation.
+
+  registerConfiguredHotkeys({
+    globalShortcut,
+    hotkeys: settings.hotkeys,
+    handlers,
+  });
+
+  // unregisterAll() also removes the temporary Enter confirmation shortcut,
+  // so restore it if settings are saved mid-confirmation.
   endSessionEnterShortcutRegistered = false;
   if (endSessionConfirmationPending) registerEndSessionEnterShortcut();
-  // Tab is handled separately by TabCapture (dynamic, foreground-scoped),
-  // never as a permanent global shortcut here.
+  // Tab is handled separately by TabCapture (dynamic, foreground-scoped).
 }
 
 // If a second launch is attempted while this instance is already
