@@ -29,6 +29,7 @@ const { TabCapture } = require("./tab-capture");
 const { FocusWatcher } = require("./focus-watcher");
 const { SessionArchiveStore } = require("../../core/session-archive-store");
 const { registerSessionIpc } = require("../../core/session-ipc");
+const { WindowBounds } = require("../../core/window-bounds");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -110,23 +111,6 @@ let endSessionConfirmationTimer = null;
 let valorantFocused = false;
 
 const PANEL_IDS = ["notepad", "toolbar", "scratch", "sessions", "browser"];
-
-// Guards against a window's own resize/move handler saving a bounds
-// change that WE triggered programmatically (e.g. applying a preset) --
-// only user-driven drags/resizes should flip a window to "custom" mode.
-//
-// This used to be a timing-based flag (set true, then cleared 100ms
-// later). That broke for hidden panels: Electron can defer a hidden
-// window's 'resize'/'move' events until it's actually shown again, which
-// can be seconds later -- long after the 100ms window had closed. The fix
-// is to remember exactly what bounds we last applied programmatically and
-// compare against that instead of racing a timer.
-let lastAppliedBounds = {
-  notepad: null,
-  toolbar: null,
-  scratch: null,
-  sessions: null,
-};
 
 function pushRoundToRenderer() {
   if (!notepadWin || !session || !session.active) return;
@@ -218,8 +202,8 @@ function applyLockState() {
 // Debounced per-window save whenever the user drags/resizes -- flips
 // that window to "custom" mode in settings automatically. Ignores any
 // resize/move event that just echoes bounds WE set programmatically
-// (see lastAppliedBounds above), no matter how long after the fact that
-// event actually arrives.
+// The WindowBounds helper tracks programmatic bounds changes so delayed
+// native events are not mistaken for user-driven movement or resizing.
 // Every place in this file that changes `settings` should call this
 // instead of settingsStore.save() directly. Saving to disk was already
 // happening from three separate spots (dragging a window, the toolbar's
@@ -238,73 +222,13 @@ function persistSettings() {
   if (mainWin) mainWin.webContents.send("settings-data", settings);
 }
 
-function watchWindowBounds(win, windowId) {
-  let timer = null;
-  // Tracks WHICH kind(s) of change happened during the debounce window --
-  // needed because dragging a corner (not just an edge) fires BOTH
-  // 'resize' and 'move' as separate native events, and each one resets
-  // the shared timer below. Without this, whichever event fired LAST
-  // would silently win and the other's change would never get saved at
-  // all -- so this accumulates both if both genuinely occurred, instead
-  // of only remembering the most recent one.
-  const pendingKinds = new Set();
-  const save = (kind) => {
-    const b = win.getBounds();
-    const applied = lastAppliedBounds[windowId];
-    if (
-      applied &&
-      b.x === applied.x &&
-      b.y === applied.y &&
-      b.width === applied.width &&
-      b.height === applied.height
-    ) {
-      return; // this is our own programmatic change echoing back, not a real user drag
-    }
-    pendingKinds.add(kind);
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      const b2 = win.getBounds();
-      // Only touch the field(s) that actually changed -- a pure drag
-      // (move only) must never flip size to custom, and a pure edge-drag
-      // resize must never flip position to custom. Dragging a corner
-      // genuinely changes both, so both get updated in that case, and
-      // only in that case.
-      if (pendingKinds.has("resize")) {
-        settings[windowId].size = {
-          mode: "custom",
-          preset: settings[windowId].size.preset,
-          width: b2.width,
-          height: b2.height,
-        };
-      }
-      if (pendingKinds.has("move")) {
-        settings[windowId].position = {
-          mode: "custom",
-          preset: settings[windowId].position.preset,
-          x: b2.x,
-          y: b2.y,
-        };
-      }
-      pendingKinds.clear();
-      persistSettings();
-    }, 400);
-  };
-  win.on("resize", () => save("resize"));
-  win.on("move", () => save("move"));
-}
-
-function applyBounds(win, windowId) {
-  const size = settingsStore.sizeFor(windowId, settings[windowId].size);
-  const rawPos =
-    settings[windowId].position.mode === "custom" &&
-    settings[windowId].position.x !== null
-      ? { x: settings[windowId].position.x, y: settings[windowId].position.y }
-      : defaultPositionFor(settings[windowId].position.preset, size);
-  const pos = clampToScreen(rawPos, size); // keeps it fully on-screen even if a saved custom x/y + new size would push it off an edge
-  const bounds = { x: pos.x, y: pos.y, width: size.width, height: size.height };
-  lastAppliedBounds[windowId] = bounds;
-  win.setBounds(bounds);
-}
+const windowBounds = new WindowBounds({
+  getSettings: () => settings,
+  settingsStore,
+  defaultPositionFor,
+  clampToScreen,
+  persistSettings: () => persistSettings(),
+});
 
 // ---- Notepad ----
 function createNotepad() {
@@ -317,7 +241,7 @@ function createNotepad() {
   const pos = clampToScreen(rawPos, size);
 
   // Suppress bounds-save during creation too, not just during a later
-  // applyBounds() call -- Electron/Windows can fire a spurious initial
+  // windowBounds.apply() call -- Electron/Windows can fire a spurious initial
   // resize/move once the window is actually shown, and without this guard
   // that stray event would silently flip a brand-new "small"/"medium"/etc.
   // preset back to "custom" even though the pixel size never changed.
@@ -333,7 +257,7 @@ function createNotepad() {
     minHeight: 200,
   });
   wm.register(notepadWin);
-  watchWindowBounds(notepadWin, "notepad");
+  windowBounds.watch(notepadWin, "notepad");
   setTimeout(() => {
     suppressBoundsSave.notepad = false;
   }, 300);
@@ -459,7 +383,7 @@ function createToolbar() {
   suppressBoundsSave.toolbar = true;
   toolbarWin = createToolbarWindow(size, pos);
   wm.register(toolbarWin);
-  watchWindowBounds(toolbarWin, "toolbar");
+  windowBounds.watch(toolbarWin, "toolbar");
   setTimeout(() => {
     suppressBoundsSave.toolbar = false;
   }, 300);
@@ -478,7 +402,7 @@ function ensureScratchWindow() {
   suppressBoundsSave.scratch = true;
   scratchWin = createScratchWindow(size, pos);
   wm.register(scratchWin);
-  watchWindowBounds(scratchWin, "scratch");
+  windowBounds.watch(scratchWin, "scratch");
   setTimeout(() => {
     suppressBoundsSave.scratch = false;
   }, 300);
@@ -505,7 +429,7 @@ function ensureSessionsWindow() {
   suppressBoundsSave.sessions = true;
   sessionsWin = createSessionsWindow(size, pos);
   wm.register(sessionsWin);
-  watchWindowBounds(sessionsWin, "sessions");
+  windowBounds.watch(sessionsWin, "sessions");
   setTimeout(() => {
     suppressBoundsSave.sessions = false;
   }, 300);
@@ -1092,10 +1016,10 @@ ipcMain.on("save-settings", (_event, data) => {
   persistSettings();
 
   registerHotkeys();
-  if (notepadWin) applyBounds(notepadWin, "notepad");
-  if (toolbarWin) applyBounds(toolbarWin, "toolbar");
-  if (scratchWin) applyBounds(scratchWin, "scratch");
-  if (sessionsWin) applyBounds(sessionsWin, "sessions");
+  if (notepadWin) windowBounds.apply(notepadWin, "notepad");
+  if (toolbarWin) windowBounds.apply(toolbarWin, "toolbar");
+  if (scratchWin) windowBounds.apply(scratchWin, "scratch");
+  if (sessionsWin) windowBounds.apply(sessionsWin, "sessions");
   pushAppearance();
   pushHotkeys();
   pushThemeToAll();
