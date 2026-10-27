@@ -34,6 +34,7 @@ const { registerScratchIpc } = require("../../core/scratch-ipc");
 const { registerConfiguredHotkeys } = require("../../core/hotkey-registry");
 const { OverlayController } = require("../../core/overlay-controller");
 const { createTray } = require("../../core/tray");
+const { keepPanelWindowAlive } = require("../../core/panel-window-lifecycle");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -60,6 +61,7 @@ let notepadWin = null;
 let toolbarWin = null;
 let scratchWin = null;
 let sessionsWin = null;
+let sessionsWindowReady = false;
 let backdropWin = null;
 let mainWin = null;
 let mainWindowReady = false;
@@ -116,13 +118,29 @@ let endSessionConfirmationTimer = null;
 const PANEL_IDS = ["notepad", "toolbar", "scratch", "sessions", "browser"];
 
 function pushRoundToRenderer() {
-  if (!notepadWin || !session || !session.active) return;
-  const payload = session.currentRoundPayload();
-  if (payload) notepadWin.webContents.send("round-data", payload);
+  if (notepadWin && session && session.active) {
+    const payload = session.currentRoundPayload();
+    if (payload) notepadWin.webContents.send("round-data", payload);
+  }
+  refreshSessionLists();
 }
 function pushSessionState() {
   if (notepadWin)
     notepadWin.webContents.send("session-state", !!(session && session.active));
+  refreshSessionLists();
+}
+
+function refreshSessionLists() {
+  if (
+    sessionsWin &&
+    sessionsWindowReady &&
+    !sessionsWin.isDestroyed()
+  ) {
+    sessionsWin.webContents.send("sessions-refresh");
+  }
+  if (mainWin && mainWindowReady && !mainWin.isDestroyed()) {
+    mainWin.webContents.send("main-sessions-refresh");
+  }
 }
 function pushEndSessionConfirmation(visible) {
   if (notepadWin)
@@ -254,6 +272,7 @@ function createNotepad() {
     minHeight: 200,
   });
   wm.register(notepadWin);
+  keepPanelWindowAlive(notepadWin, { isQuitting: () => isQuitting, onClose: () => overlayController.closePanel("notepad") });
   windowBounds.watch(notepadWin, "notepad");
 }
 
@@ -376,6 +395,7 @@ function createToolbar() {
 
   toolbarWin = createToolbarWindow(size, pos);
   wm.register(toolbarWin);
+  keepPanelWindowAlive(toolbarWin, { isQuitting: () => isQuitting, onClose: () => overlayController.closePanel("toolbar") });
   windowBounds.watch(toolbarWin, "toolbar");
 }
 
@@ -391,6 +411,7 @@ function ensureScratchWindow() {
   const pos = clampToScreen(rawPos, size);
   scratchWin = createScratchWindow(size, pos);
   wm.register(scratchWin);
+  keepPanelWindowAlive(scratchWin, { isQuitting: () => isQuitting, onClose: () => overlayController.closePanel("scratch") });
   windowBounds.watch(scratchWin, "scratch");
 }
 
@@ -402,7 +423,9 @@ function loadScratchIntoWindow() {
 
 // ---- Session browser ----
 function ensureSessionsWindow() {
-  if (sessionsWin) return;
+  if (sessionsWin && !sessionsWin.isDestroyed()) return;
+  sessionsWindowReady = false;
+
   const size = settingsStore.sizeFor("sessions", settings.sessions.size);
   const rawPos =
     settings.sessions.position.mode === "custom" &&
@@ -411,7 +434,15 @@ function ensureSessionsWindow() {
       : defaultPositionFor(settings.sessions.position.preset, size);
   const pos = clampToScreen(rawPos, size);
   sessionsWin = createSessionsWindow(size, pos);
+  const createdWin = sessionsWin;
+  createdWin.webContents.once("did-finish-load", () => {
+    if (sessionsWin !== createdWin || createdWin.isDestroyed()) return;
+    sessionsWindowReady = true;
+    createdWin.webContents.send("theme-data", settings.theme);
+    createdWin.webContents.send("sessions-refresh");
+  });
   wm.register(sessionsWin);
+  keepPanelWindowAlive(sessionsWin, { isQuitting: () => isQuitting, onClose: () => overlayController.closePanel("sessions") });
   windowBounds.watch(sessionsWin, "sessions");
 }
 
@@ -440,6 +471,7 @@ function ensureBrowserWindow() {
   });
 
   wm.register(browserWin);
+  keepPanelWindowAlive(browserWin, { isQuitting: () => isQuitting, onClose: () => overlayController.closePanel("browser") });
 
   browserWin.on("closed", () => {
     browserWin = null;
@@ -535,7 +567,10 @@ function showPanelWindow(id) {
       break;
     case "sessions":
       ensureSessionsWindow();
-      sessionsWin.webContents.send("theme-data", settings.theme);
+      if (sessionsWindowReady) {
+        sessionsWin.webContents.send("theme-data", settings.theme);
+        sessionsWin.webContents.send("sessions-refresh");
+      }
       wm.showAndFocus(sessionsWin);
       break;
     case "browser":

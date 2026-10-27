@@ -27,6 +27,13 @@
 
       window.mainApp.onSelectTab((tab) => selectTab(tab));
 
+      window.mainApp.onSessionsRefresh(() => {
+        const sessionsPane = document.getElementById("pane-sessions");
+        if (sessionsPane && sessionsPane.classList.contains("active")) {
+          renderSessions();
+        }
+      });
+
       window.mainApp.onTheme((theme) => applyTheme(theme));
 
       document.getElementById("winMinimize").addEventListener("click", () => {
@@ -132,7 +139,7 @@
               </div>
 
               <div class="sub">
-                ${date} · ${s.roundCount} round${s.roundCount === 1 ? "" : "s"} noted
+                ${date} · ${s.roundCount} round${s.roundCount === 1 ? "" : "s"} tracked
               </div>
             `;
 

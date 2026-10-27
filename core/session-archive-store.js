@@ -43,7 +43,7 @@ class SessionArchiveStore {
             id: data.id,
             status: data.status || "closed",
             mdFile: f.replace(/\.json$/, ".md"),
-            roundCount: Object.keys(rounds).length,
+            roundCount: Object.keys(rounds).filter((roundNumber) => Number(roundNumber) > 0).length,
             startedAt: data.startedAt,
             won: tally.won,
             lost: tally.lost,

@@ -36,23 +36,6 @@
         cursor: pointer;
       }
 
-      .item .session-menu-btn {
-        flex: 0 0 auto;
-        width: 26px;
-        height: 26px;
-        border: none;
-        border-radius: 5px;
-        background: transparent;
-        color: var(--overlay-muted);
-        cursor: pointer;
-        font-size: 18px;
-        line-height: 1;
-      }
-
-      .item .session-menu-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--overlay-foreground);
-      }
       .item:hover {
         background: rgba(255, 255, 255, 0.1);
       }
@@ -152,10 +135,16 @@
           btn.className = "item";
           const date = new Date(s.startedAt).toLocaleString();
           const total = s.won + s.lost;
-          const result = total > 0 ? (s.won >= s.lost ? "W" : "L") : null;
-          const tag = result
-            ? `<span class="result-tag ${result === "W" ? "win" : "loss"}">${result}</span>`
-            : `<span class="result-tag" style="background:var(--muted); color:var(--muted-foreground);">—</span>`;
+          const isActive = s.status === "active";
+          const result =
+            !isActive && total > 0 && s.won !== s.lost
+              ? s.won > s.lost ? "W" : "L"
+              : null;
+          const tag = isActive
+            ? `<span class="result-tag" style="background:var(--accent); color:white;">LIVE</span>`
+            : result
+              ? `<span class="result-tag ${result === "W" ? "win" : "loss"}">${result}</span>`
+              : `<span class="result-tag" style="background:var(--muted); color:var(--muted-foreground);">—</span>`;
           btn.innerHTML = `
             ${tag}
             <span class="meta">
@@ -163,20 +152,13 @@
               <span class="sub">${s.roundCount} round${s.roundCount === 1 ? "" : "s"} noted</span>
             </span>
             <span class="score">${s.won}-${s.lost}</span>
-            <button class="session-menu-btn" type="button" aria-label="Session options">⋮</button>
           `;
-
-          const menuBtn = btn.querySelector(".session-menu-btn");
-
-          menuBtn.addEventListener("click", (event) => {
-            event.stopPropagation();
-            // El menú lo implementaremos en el siguiente paso.
-          });
 
           btn.addEventListener("click", () => window.sessions.open(s.mdFile));
           listEl.appendChild(btn);
         }
       }
+      window.sessions.onRefresh(() => render());
       render();
 
       document

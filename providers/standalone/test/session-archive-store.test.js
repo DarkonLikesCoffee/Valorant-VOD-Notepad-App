@@ -202,3 +202,20 @@ test("store rejects unsafe IDs and refuses to mutate or delete an active session
   assert.equal(store.getSession("live").map, "Ascent");
   assert.equal(fs.existsSync(path.join(notesDir, "session-live.json")), true);
 });
+
+
+test("listSessions excludes pre-match round zero from the tracked-round count", (t) => {
+  const { notesDir, store } = makeStore(t);
+  writeJson(notesDir, "session-new.json", {
+    id: "new",
+    status: "active",
+    startedAt: 300,
+    rounds: {
+      0: { note: "", stats: null },
+      1: { note: "", outcome: null },
+      2: { note: "Baited the retake", outcome: "won" },
+    },
+  });
+
+  assert.equal(store.listSessions()[0].roundCount, 2);
+});

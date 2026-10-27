@@ -30,6 +30,8 @@ contextBridge.exposeInMainWorld("mainApp", {
   onTheme: (cb) => ipcRenderer.on("theme-data", (_e, theme) => cb(theme)),
   onSelectTab: (cb) =>
     ipcRenderer.on("main-window-select-tab", (_event, tab) => cb(tab)),
+  onSessionsRefresh: (cb) =>
+    ipcRenderer.on("main-sessions-refresh", () => cb()),
 
   // Window controls -- needed now that the window is frameless (see
   // main-window.js) and no longer has the OS's own minimize/maximize/
