@@ -4,7 +4,7 @@
  * Keeps the frameless main window's native-style controls out of the
  * application's large Electron entry point.
  */
-function registerMainWindowIpc({ ipcMain, getMainWindow }) {
+function registerMainWindowIpc({ ipcMain, getMainWindow, openSettings = () => {} }) {
   ipcMain.on("main-window-minimize", () => {
     console.log("[main-window-ipc] minimize received");
     const mainWin = getMainWindow();
@@ -24,6 +24,9 @@ function registerMainWindowIpc({ ipcMain, getMainWindow }) {
     const mainWin = getMainWindow();
     if (mainWin) mainWin.close();
   });
+
+  ipcMain.on("open-settings", () => openSettings());
+  ipcMain.on("toolbar-open-settings", () => openSettings());
 }
 
 module.exports = { registerMainWindowIpc };

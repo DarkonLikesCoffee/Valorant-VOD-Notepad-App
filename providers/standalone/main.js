@@ -62,6 +62,8 @@ let scratchWin = null;
 let sessionsWin = null;
 let backdropWin = null;
 let mainWin = null;
+let mainWindowReady = false;
+let pendingMainWindowTab = null;
 let browserWin = null;
 let endSessionToastWin = null;
 let tray = null;
@@ -446,14 +448,39 @@ function ensureBrowserWindow() {
 
 // ---- Main app window ----
 // The one normal, non-overlay window -- Scratch Pad and Session History
-// built in directly, plus a button into the shared Settings window.
+// built in directly, plus the integrated Settings tab.
 // Independent of the overlay/game-focus gating entirely: works anytime,
 // whether Valorant is running or not. Closing it (the X button) just
 // hides it -- see the 'close' handler below -- so the background
 // hotkeys/overlay keep working even with this window shut.
+function selectMainWindowTab(tab) {
+  if (!mainWin || mainWin.isDestroyed()) return;
+
+  if (!mainWindowReady) {
+    pendingMainWindowTab = tab;
+    return;
+  }
+
+  wm.showAndFocus(mainWin);
+  mainWin.webContents.send("main-window-select-tab", tab);
+}
+
+function openSettings() {
+  selectMainWindowTab("settings");
+}
+
 function createMainAppWindow() {
   mainWin = createMainWindow();
   wm.register(mainWin);
+  mainWindowReady = false;
+  mainWin.webContents.once("did-finish-load", () => {
+    mainWindowReady = true;
+    if (pendingMainWindowTab) {
+      const tab = pendingMainWindowTab;
+      pendingMainWindowTab = null;
+      mainWin.webContents.send("main-window-select-tab", tab);
+    }
+  });
   mainWin.once("ready-to-show", () => {
     pushThemeToAll();
     mainWin.show();
@@ -575,6 +602,7 @@ function registerHotkeys() {
     toolbar: () => overlayController.togglePanel("toolbar"),
     scratch: () => overlayController.togglePanel("scratch"),
     sessions: () => overlayController.togglePanel("sessions"),
+    settings: openSettings,
   };
 
   registerConfiguredHotkeys({
@@ -705,7 +733,7 @@ ipcMain.on("backdrop-click", () => overlayController.closeOverlay());
 // up in that window's DevTools, the problem is a channel-name mismatch
 // between here and toolbar-preload.js. If BOTH log, but nothing visibly
 // happens, the bug is inside whatever function is being called
-// (togglePanel, openSettingsWindow, etc.) -- next step would be adding
+// (togglePanel, openSettings, etc.) -- next step would be adding
 // logging inside that function specifically.
 ipcMain.on("toolbar-open-notepad", () => {
   console.log("[toolbar-ipc] open-notepad received");
@@ -736,6 +764,7 @@ ipcMain.on("toolbar-close-overlay", () => {
 registerMainWindowIpc({
   ipcMain,
   getMainWindow: () => mainWin,
+  openSettings,
 });
 
 // ---- IPC: scratch notepad ----

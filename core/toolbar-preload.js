@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('toolbarApi', {
   openScratch: () => { console.log('[toolbar] openScratch clicked'); ipcRenderer.send('toolbar-open-scratch'); },
   openSessions: () => { console.log('[toolbar] openSessions clicked'); ipcRenderer.send('toolbar-open-sessions'); },
   openBrowser: () => { console.log('[toolbar] openBrowser clicked'); ipcRenderer.send('toolbar-open-browser'); },
+  openSettings: () => { console.log('[toolbar] openSettings clicked'); ipcRenderer.send('toolbar-open-settings'); },
   toggleLock: () => { console.log('[toolbar] toggleLock clicked'); ipcRenderer.send('toggle-lock'); },
   manualRound: () => { console.log('[toolbar] manualRound clicked'); ipcRenderer.send('toolbar-manual-round'); },
   closeOverlay: () => { console.log('[toolbar] closeOverlay clicked'); ipcRenderer.send('toolbar-close-overlay'); },

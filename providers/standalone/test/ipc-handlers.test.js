@@ -145,3 +145,20 @@ test("browser-close delegates to the overlay controller", () => {
   ipcMain.handlers.get("browser-close")();
   assert.equal(closed, 1);
 });
+
+
+test("settings navigation IPC uses the shared settings-tab action", () => {
+  const ipcMain = createIpcMain();
+  let opened = 0;
+  registerMainWindowIpc({
+    ipcMain,
+    getMainWindow: () => null,
+    openSettings: () => {
+      opened += 1;
+    },
+  });
+
+  ipcMain.handlers.get("open-settings")();
+  ipcMain.handlers.get("toolbar-open-settings")();
+  assert.equal(opened, 2);
+});

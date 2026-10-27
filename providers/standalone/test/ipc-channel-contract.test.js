@@ -83,3 +83,12 @@ test("main-process IPC channels are not registered more than once", () => {
 
   assert.deepEqual(duplicates, []);
 });
+
+
+test("the configured settings hotkey opens the existing Settings tab", () => {
+  const main = readSource("providers/standalone/main.js");
+  const settings = readSource("core/settings-store.js");
+  assert.match(settings, /settings:\s*['"]Alt\+S['"]/);
+  assert.match(main, /settings:\s*openSettings/);
+  assert.match(main, /function openSettings\(\)\s*\{\s*selectMainWindowTab\(["']settings["']\);\s*\}/);
+});

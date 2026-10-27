@@ -4,23 +4,28 @@
         settings: "Settings",
       };
 
+      function selectTab(tab) {
+        const navItems = [...document.querySelectorAll(".nav-item")];
+        const navItem = navItems.find((item) => item.dataset.tab === tab);
+        const pane = document.getElementById("pane-" + tab);
+        if (!navItem || !pane || !SECTION_TITLES[tab]) return false;
+
+        navItems.forEach((item) => item.classList.remove("active"));
+        document
+          .querySelectorAll(".pane")
+          .forEach((item) => item.classList.remove("active"));
+        navItem.classList.add("active");
+        pane.classList.add("active");
+        document.getElementById("section-now").textContent = SECTION_TITLES[tab];
+        if (tab === "sessions") renderSessions();
+        return true;
+      }
+
       document.querySelectorAll(".nav-item").forEach((el) => {
-        el.addEventListener("click", () => {
-          document
-            .querySelectorAll(".nav-item")
-            .forEach((n) => n.classList.remove("active"));
-          document
-            .querySelectorAll(".pane")
-            .forEach((p) => p.classList.remove("active"));
-          el.classList.add("active");
-          document
-            .getElementById("pane-" + el.dataset.tab)
-            .classList.add("active");
-          document.getElementById("section-now").textContent =
-            SECTION_TITLES[el.dataset.tab];
-          if (el.dataset.tab === "sessions") renderSessions();
-        });
+        el.addEventListener("click", () => selectTab(el.dataset.tab));
       });
+
+      window.mainApp.onSelectTab((tab) => selectTab(tab));
 
       window.mainApp.onTheme((theme) => applyTheme(theme));
 
