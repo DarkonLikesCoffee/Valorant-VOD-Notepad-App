@@ -3,9 +3,6 @@ const {
   globalShortcut,
   ipcMain,
   shell,
-  Tray,
-  Menu,
-  nativeImage,
 } = require("electron");
 const fs = require("fs");
 const path = require("path");
@@ -36,6 +33,7 @@ const { ScratchStore } = require("../../core/scratch-store");
 const { registerScratchIpc } = require("../../core/scratch-ipc");
 const { registerConfiguredHotkeys } = require("../../core/hotkey-registry");
 const { OverlayController } = require("../../core/overlay-controller");
+const { createTray } = require("../../core/tray");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -496,48 +494,6 @@ function createMainAppWindow() {
   });
 }
 
-// Small dot icon built at runtime -- no external image asset needed.
-function createTrayIcon() {
-  const size = 16;
-  const buffer = Buffer.alloc(size * size * 4);
-  const cx = size / 2 - 0.5;
-  const cy = size / 2 - 0.5;
-  const radius = size / 2 - 1.5;
-  const color = [255, 70, 85]; // matches the app's accent red
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-      const i = (y * size + x) * 4;
-      if (dist <= radius) {
-        buffer[i] = color[0];
-        buffer[i + 1] = color[1];
-        buffer[i + 2] = color[2];
-        buffer[i + 3] = 255;
-      }
-    }
-  }
-  return nativeImage.createFromBuffer(buffer, { width: size, height: size });
-}
-
-function createTray() {
-  tray = new Tray(createTrayIcon());
-  tray.setToolTip("Valorant VOD Notepad");
-  const menu = Menu.buildFromTemplate([
-    {
-      label: "Open App",
-      click: () => {
-        if (mainWin) wm.showAndFocus(mainWin);
-      },
-    },
-    { type: "separator" },
-    { label: "Quit", click: () => app.quit() },
-  ]);
-  tray.setContextMenu(menu);
-  tray.on("click", () => {
-    if (mainWin) wm.showAndFocus(mainWin);
-  });
-}
-
 // ---- Unified overlay ----
 // The backdrop plus whichever panel windows are "in" the overlay are
 // shown/hidden together. Individual panel hotkeys add/remove that panel
@@ -672,7 +628,15 @@ app.whenReady().then(async () => {
   session = new SessionManager(NOTES_DIR);
 
   createMainAppWindow();
-  createTray();
+  tray = createTray({
+    Tray,
+    Menu,
+    nativeImage,
+    showMainApp: () => {
+      if (mainWin) wm.showAndFocus(mainWin);
+    },
+    quitApp: () => app.quit(),
+  });
 
   createNotepad();
   createToolbar();
