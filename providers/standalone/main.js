@@ -741,11 +741,7 @@ registerMainWindowIpc({
 registerScratchIpc({
   ipcMain,
   store: scratchStore,
-  onHide: () => {
-    hidePanelWindow("scratch");
-    overlayState.visiblePanels.delete("scratch");
-    if (overlayState.visiblePanels.size === 0) overlayController.closeOverlay();
-  },
+  onHide: () => overlayController.closePanel("scratch"),
 });
 
 // ---- IPC: session browser ----
@@ -764,16 +760,13 @@ ipcMain.on("open-session", (_event, mdFile) => {
   }
   shell.openPath(path.join(NOTES_DIR, mdFile));
 });
-ipcMain.on("sessions-hide", () => {
-  hidePanelWindow("sessions");
-  overlayState.visiblePanels.delete("sessions");
-  if (overlayState.visiblePanels.size === 0) overlayController.closeOverlay();
-});
+ipcMain.on("sessions-hide", () => overlayController.closePanel("sessions"));
 
 // ---- IPC: browser ----
 registerBrowserIpc({
   ipcMain,
   getBrowserWindow: () => browserWin,
+  onClose: () => overlayController.closePanel("browser"),
 });
 
 // ---- IPC: settings ----

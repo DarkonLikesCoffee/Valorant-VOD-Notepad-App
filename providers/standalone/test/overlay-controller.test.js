@@ -141,3 +141,37 @@ test("main process wires overlay focus and open intent to the shared state", () 
   assert.ok(stateObject, "main process should declare one overlay state object");
   assert.match(stateObject[1], /overlayWantsOpen:\s*false/);
 });
+
+
+test("closePanel removes a panel from overlay state and closes the empty overlay", () => {
+  const { controller, state, calls, windows } = makeHarness({ showOnOpen: {} });
+  controller.openOverlay();
+  controller.togglePanel("scratch");
+  assert.equal(state.visiblePanels.has("scratch"), true);
+  assert.equal(windows.scratch.visible, true);
+
+  calls.length = 0;
+  controller.closePanel("scratch");
+
+  assert.equal(windows.scratch.visible, false);
+  assert.equal(state.visiblePanels.size, 0);
+  assert.equal(state.overlayOpen, false);
+  assert.equal(state.overlayWantsOpen, false);
+  assert.equal(calls.filter((call) => call[0] === "hide" && call[1] === "scratch").length, 1);
+  assert.ok(calls.some((call) => call[0] === "backdrop-hide"));
+});
+
+test("closePanel preserves other visible panels", () => {
+  const { controller, state, calls, windows } = makeHarness();
+  controller.openOverlay();
+  calls.length = 0;
+
+  controller.closePanel("notepad");
+
+  assert.equal(windows.notepad.visible, false);
+  assert.equal(windows.toolbar.visible, true);
+  assert.equal(state.visiblePanels.has("notepad"), false);
+  assert.equal(state.visiblePanels.has("toolbar"), true);
+  assert.equal(state.overlayOpen, true);
+  assert.deepEqual(calls, [["hide", "notepad"]]);
+});

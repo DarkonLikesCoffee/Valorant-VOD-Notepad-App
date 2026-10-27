@@ -35,7 +35,7 @@ test("browser IPC delegates navigation actions to the current browser window", (
     hide: () => calls.push("hide"),
   };
 
-  registerBrowserIpc({ ipcMain, getBrowserWindow: () => browserWindow });
+  registerBrowserIpc({ ipcMain, getBrowserWindow: () => browserWindow, onClose: () => { const current = browserWindow; if (current) current.hide(); } });
   ipcMain.handlers.get("browser-go-back")();
   ipcMain.handlers.get("browser-go-forward")();
   ipcMain.handlers.get("browser-reload")();
@@ -68,7 +68,7 @@ test("browser IPC safely ignores missing webview instances", () => {
   const ipcMain = createIpcMain();
   let hidden = 0;
   const browserWindow = { browserWebView: null, hide: () => hidden++ };
-  registerBrowserIpc({ ipcMain, getBrowserWindow: () => browserWindow });
+  registerBrowserIpc({ ipcMain, getBrowserWindow: () => browserWindow, onClose: () => { const current = browserWindow; if (current) current.hide(); } });
 
   for (const channel of [
     "browser-go-back",
@@ -128,4 +128,20 @@ test("main-window IPC safely handles an absent window", () => {
   } finally {
     console.log = originalLog;
   }
+});
+
+
+test("browser-close delegates to the overlay controller", () => {
+  const ipcMain = createIpcMain();
+  let closed = 0;
+  registerBrowserIpc({
+    ipcMain,
+    getBrowserWindow: () => null,
+    onClose: () => {
+      closed += 1;
+    },
+  });
+
+  ipcMain.handlers.get("browser-close")();
+  assert.equal(closed, 1);
 });

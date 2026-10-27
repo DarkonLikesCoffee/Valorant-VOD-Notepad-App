@@ -4,7 +4,7 @@
  * Registers IPC handlers for the optional embedded browser panel.
  * The window is resolved at event time because it is created lazily.
  */
-function registerBrowserIpc({ ipcMain, getBrowserWindow }) {
+function registerBrowserIpc({ ipcMain, getBrowserWindow, onClose }) {
   ipcMain.on("browser-go-back", () => {
     const browserWin = getBrowserWindow();
     if (!browserWin) return;
@@ -33,10 +33,7 @@ function registerBrowserIpc({ ipcMain, getBrowserWindow }) {
     if (webView) webView.webContents.loadURL(url);
   });
 
-  ipcMain.on("browser-close", () => {
-    const browserWin = getBrowserWindow();
-    if (browserWin) browserWin.hide();
-  });
+  ipcMain.on("browser-close", () => onClose());
 }
 
 module.exports = { registerBrowserIpc };

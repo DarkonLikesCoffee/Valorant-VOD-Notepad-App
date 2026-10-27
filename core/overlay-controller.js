@@ -42,15 +42,28 @@ class OverlayController {
     this.state.overlayOpen = true;
   }
 
-  closeOverlay({ hidePersistent = false } = {}) {
+  closeOverlay({ hidePersistent = false, alreadyHidden = null } = {}) {
     this.state.overlayWantsOpen = false;
     this.panelIds.forEach((id) => {
+      if (id === alreadyHidden) return;
       if (!hidePersistent && this.state.persistentPanels.has(id)) return;
       this.hidePanelWindow(id);
     });
     this.hideBackdrop();
     this.state.visiblePanels.clear();
     this.state.overlayOpen = false;
+  }
+
+  closePanel(id) {
+    const wasInOverlay =
+      this.state.overlayOpen && this.state.visiblePanels.has(id);
+
+    this.hidePanelWindow(id);
+    this.state.visiblePanels.delete(id);
+
+    if (wasInOverlay && this.state.visiblePanels.size === 0) {
+      this.closeOverlay({ alreadyHidden: id });
+    }
   }
 
   hideOverlayForFocusLoss() {
