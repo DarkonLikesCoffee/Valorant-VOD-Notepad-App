@@ -32,6 +32,8 @@ const { registerSessionIpc } = require("../../core/session-ipc");
 const { WindowBounds } = require("../../core/window-bounds");
 const { registerMainWindowIpc } = require("../../core/main-window-ipc");
 const { registerBrowserIpc } = require("../../core/browser-ipc");
+const { ScratchStore } = require("../../core/scratch-store");
+const { registerScratchIpc } = require("../../core/scratch-ipc");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -50,7 +52,7 @@ if (!gotLock) {
 const NOTES_DIR = path.join(app.getPath("documents"), "ValorantVODNotes");
 const sessionArchiveStore = new SessionArchiveStore(NOTES_DIR);
 const SETTINGS_PATH = path.join(app.getPath("userData"), "settings.json");
-const SCRATCH_PATH = path.join(NOTES_DIR, "scratchpad.md");
+const scratchStore = new ScratchStore(NOTES_DIR);
 
 const wm = new WindowManager();
 
@@ -411,9 +413,7 @@ function ensureScratchWindow() {
 }
 
 function loadScratchIntoWindow() {
-  const text = fs.existsSync(SCRATCH_PATH)
-    ? fs.readFileSync(SCRATCH_PATH, "utf-8")
-    : "";
+  const text = scratchStore.load();
   scratchWin.webContents.send("theme-data", settings.theme);
   scratchWin.webContents.send("scratch-load", text);
 }
@@ -900,19 +900,14 @@ registerMainWindowIpc({
 });
 
 // ---- IPC: scratch notepad ----
-ipcMain.handle("get-scratch", () => {
-  return fs.existsSync(SCRATCH_PATH)
-    ? fs.readFileSync(SCRATCH_PATH, "utf-8")
-    : "";
-});
-ipcMain.on("scratch-save", (_event, text) => {
-  if (!fs.existsSync(NOTES_DIR)) fs.mkdirSync(NOTES_DIR, { recursive: true });
-  fs.writeFileSync(SCRATCH_PATH, text);
-});
-ipcMain.on("scratch-hide", () => {
-  hidePanelWindow("scratch");
-  visiblePanels.delete("scratch");
-  if (visiblePanels.size === 0) closeOverlay();
+registerScratchIpc({
+  ipcMain,
+  store: scratchStore,
+  onHide: () => {
+    hidePanelWindow("scratch");
+    visiblePanels.delete("scratch");
+    if (visiblePanels.size === 0) closeOverlay();
+  },
 });
 
 // ---- IPC: session browser ----
