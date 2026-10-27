@@ -35,6 +35,7 @@ const { registerBrowserIpc } = require("../../core/browser-ipc");
 const { ScratchStore } = require("../../core/scratch-store");
 const { registerScratchIpc } = require("../../core/scratch-ipc");
 const { registerConfiguredHotkeys } = require("../../core/hotkey-registry");
+const { OverlayController } = require("../../core/overlay-controller");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -87,23 +88,27 @@ let suppressBoundsSave = {
 let locked = false;
 
 // PERSIST: separate, per-window concept. A panel in this set stays
-// visible when closeOverlay() runs instead of being hidden -- this is
+// visible when overlayController.closeOverlay() runs instead of being hidden -- this is
 // what lets you keep the notepad (or scratch pad) open and readable
 // while playing, without the whole overlay/backdrop being up. Only
 // notepad and scratch ever go in here (see their own pin buttons).
-let persistentPanels = new Set();
+const overlayState = {
+  persistentPanels: new Set(),
+  overlayOpen: false,
+  overlayWantsOpen: false,
+  visiblePanels: new Set(),
+  panelsHiddenForFocusLoss: new Set(),
+  valorantFocused: false,
+};
 
 // ---- Unified overlay state ----
-// overlayOpen: is the backdrop + any panels actually visible right now.
-// overlayWantsOpen: the user's intent to keep the overlay open. The
+// overlayState.overlayOpen: is the backdrop + any panels actually visible right now.
+// overlayState.overlayWantsOpen: the user's intent to keep the overlay open. The
 // focus watcher temporarily hides it outside VALORANT and restores it
 // when the game regains focus.
-// visiblePanels: which panel ids (notepad/toolbar/scratch/sessions) are
+// overlayState.visiblePanels: which panel ids (notepad/toolbar/scratch/sessions) are
 // currently part of the open overlay.
-let overlayOpen = false;
-let overlayWantsOpen = false;
-let visiblePanels = new Set();
-let panelsHiddenForFocusLoss = new Set();
+
 let endSessionConfirmationPending = false;
 let endSessionEnterShortcutRegistered = false;
 let endSessionConfirmationTimer = null;
@@ -113,7 +118,7 @@ let endSessionConfirmationTimer = null;
 // overlay is open. Used to gate every "open the overlay" entry point --
 // the overlay should only ever be openable while actually tabbed into
 // the game, same as Valorant Tracker.
-let valorantFocused = false;
+
 
 const PANEL_IDS = ["notepad", "toolbar", "scratch", "sessions", "browser"];
 
@@ -180,7 +185,7 @@ function pushLockStateToAll() {
 // IT specifically is currently pinned-to-stay-open.
 function pushPersistState(id) {
   const w = getPanelWin(id);
-  if (w) w.webContents.send("persist-state", persistentPanels.has(id));
+  if (w) w.webContents.send("persist-state", overlayState.persistentPanels.has(id));
 }
 
 // ---- Lock: locks every overlay window's position AND size ----
@@ -326,7 +331,7 @@ function registerEndSessionEnterShortcut() {
     endSessionEnterShortcutRegistered = globalShortcut.register(
       "Return",
       () => {
-        if (endSessionConfirmationPending && valorantFocused) endSession();
+        if (endSessionConfirmationPending && overlayState.valorantFocused) endSession();
       },
     );
   } catch (err) {
@@ -342,7 +347,7 @@ function showEndSessionToast() {
     endSessionToastWin = createEndSessionToastWindow();
     endSessionToastWin.webContents.once("did-finish-load", () => {
       endSessionToastWin.webContents.send("theme-data", settings.theme);
-      if (endSessionConfirmationPending && valorantFocused)
+      if (endSessionConfirmationPending && overlayState.valorantFocused)
         endSessionToastWin.showInactive();
     });
     return;
@@ -356,13 +361,13 @@ function requestEndSession({ showOverlay = false } = {}) {
     !session ||
     !session.active ||
     endSessionConfirmationPending ||
-    !valorantFocused
+    !overlayState.valorantFocused
   )
     return false;
   setEndSessionConfirmationPending(true);
   registerEndSessionEnterShortcut();
   if (showOverlay) {
-    ensurePanelShown("notepad");
+    overlayController.ensurePanelShown("notepad");
   } else {
     showEndSessionToast();
     endSessionConfirmationTimer = setTimeout(() => cancelEndSession(), 5000);
@@ -593,140 +598,54 @@ function hidePanelWindow(id) {
   win.hide();
 }
 
-// Opens the backdrop plus every panel marked showOnOpen in settings.
-// This is what the master hotkey (Alt+N) does when the overlay is
-// currently closed.
-function openOverlay() {
-  overlayWantsOpen = true;
-  visiblePanels = new Set(
-    PANEL_IDS.filter((id) => settings[id] && settings[id].showOnOpen),
-  );
+function navRound(direction) {
+  overlayController.ensurePanelShown("notepad");
+  session.navigate(direction);
+  pushRoundToRenderer();
+}
+
+function showBackdrop() {
   if (!backdropWin) {
     backdropWin = createBackdropWindow();
     wm.register(backdropWin);
   }
   backdropWin.show();
-  visiblePanels.forEach((id) => showPanelWindow(id));
-  overlayOpen = true;
 }
 
-// Closes everything -- backdrop and every panel, regardless of which
-// were open. This is the master "close" gesture: Alt+N while open,
-// clicking the dim backdrop, or Esc from the notepad.
-function closeOverlay({ hidePersistent = false } = {}) {
-  overlayWantsOpen = false;
-  // A pinned panel can survive a normal user-close, but never a focus
-  // loss: no app window from this overlay may remain visible outside the
-  // game.
-  PANEL_IDS.forEach((id) => {
-    if (!hidePersistent && persistentPanels.has(id)) return;
-    hidePanelWindow(id);
-  });
+function showExistingBackdrop() {
+  if (backdropWin) backdropWin.show();
+}
+
+function hideBackdrop() {
   if (backdropWin) backdropWin.hide();
-  visiblePanels.clear();
-  overlayOpen = false;
 }
 
-// Focus loss is different from a user-close: all windows must disappear
-// outside VALORANT (including pinned ones), but the set of open panels and
-// the user's intent are retained so the same overlay returns on tab-in.
-function hideOverlayForFocusLoss() {
-  panelsHiddenForFocusLoss = new Set(
-    PANEL_IDS.filter((id) => {
-      const win = getPanelWin(id);
-      return win && win.isVisible();
-    }),
-  );
-  PANEL_IDS.forEach((id) => hidePanelWindow(id));
-  if (backdropWin) backdropWin.hide();
-  overlayOpen = false;
-}
-
-function restoreAfterFocusGain() {
-  if (overlayWantsOpen) {
-    if (backdropWin) backdropWin.show();
-    visiblePanels.forEach((id) => showPanelWindow(id));
-    overlayOpen = true;
-  }
-
-  // A pinned panel can be visible after a normal overlay-close, so it is
-  // not necessarily included in visiblePanels. Restore only pinned panels
-  // that were actually on screen when focus was lost.
-  panelsHiddenForFocusLoss.forEach((id) => {
-    if (persistentPanels.has(id) && !visiblePanels.has(id)) showPanelWindow(id);
-  });
-  panelsHiddenForFocusLoss.clear();
-}
-
-function toggleOverlay() {
-  // Alt+N only opens the overlay from VALORANT. Closing remains allowed
-  // unconditionally so the user can always dismiss it.
-  if (overlayOpen) {
-    closeOverlay();
-  } else if (valorantFocused) {
-    openOverlay();
-  }
-}
-
-// Ensures a specific panel is showing -- opens the overlay first if it
-// wasn't already open, and adds this panel even if its own showOnOpen
-// setting is off (an explicit hotkey press always wins).
-function ensurePanelShown(id) {
-  if (!overlayOpen) {
-    if (!valorantFocused) return;
-    openOverlay();
-  }
-  if (!visiblePanels.has(id)) {
-    visiblePanels.add(id);
-    showPanelWindow(id);
-  } else {
-    wm.showAndFocus(getPanelWin(id));
-  }
-}
-
-// Toggles one panel's membership in the currently open overlay. If the
-// overlay wasn't open, opens it (with its normal showOnOpen defaults)
-// then also shows this panel. If, after hiding a panel, nothing is left
-// visible, the whole overlay closes rather than leaving an empty dim
-// backdrop on screen.
-function togglePanel(id) {
-  if (!overlayOpen) {
-    if (!valorantFocused) return;
-    openOverlay();
-    if (!visiblePanels.has(id)) {
-      visiblePanels.add(id);
-      showPanelWindow(id);
-    }
-    return;
-  }
-  if (visiblePanels.has(id)) {
-    hidePanelWindow(id);
-    visiblePanels.delete(id);
-    if (visiblePanels.size === 0) closeOverlay();
-  } else {
-    visiblePanels.add(id);
-    showPanelWindow(id);
-  }
-}
-
-function navRound(direction) {
-  ensurePanelShown("notepad");
-  session.navigate(direction);
-  pushRoundToRenderer();
-}
+const overlayController = new OverlayController({
+  state: overlayState,
+  panelIds: PANEL_IDS,
+  getSettings: () => settings,
+  getPanelWindow: getPanelWin,
+  showPanelWindow,
+  hidePanelWindow,
+  showBackdrop,
+  showExistingBackdrop,
+  hideBackdrop,
+  isGameFocused: () => overlayState.overlayState.valorantFocused,
+  showAndFocus: (win) => wm.showAndFocus(win),
+});
 
 // ---- Hotkeys ----
 function registerHotkeys() {
   const handlers = {
-    toggle: toggleOverlay,
+    toggle: overlayController.toggleOverlay,
     manualRound: manualNewRound,
     newSession: startSession,
     endSession: requestEndSession,
     prevRound: () => navRound("prev"),
     nextRound: () => navRound("next"),
-    toolbar: () => togglePanel("toolbar"),
-    scratch: () => togglePanel("scratch"),
-    sessions: () => togglePanel("sessions"),
+    toolbar: () => overlayController.togglePanel("toolbar"),
+    scratch: () => overlayController.togglePanel("scratch"),
+    sessions: () => overlayController.togglePanel("sessions"),
   };
 
   registerConfiguredHotkeys({
@@ -789,15 +708,15 @@ app.whenReady().then(async () => {
   // to the game restores exactly the panels that were open before tabbing
   // out, but never shows them in any other application.
   focusWatcher = new FocusWatcher((isValorantFocused) => {
-    valorantFocused = isValorantFocused;
+    overlayState.valorantFocused = isValorantFocused;
     if (!isValorantFocused) {
       if (endSessionToastWin) endSessionToastWin.hide();
-      hideOverlayForFocusLoss();
+      overlayController.hideOverlayForFocusLoss();
     } else if (
-      (overlayWantsOpen || panelsHiddenForFocusLoss.size > 0) &&
-      !overlayOpen
+      (overlayState.overlayWantsOpen || overlayState.panelsHiddenForFocusLoss.size > 0) &&
+      !overlayState.overlayOpen
     ) {
-      restoreAfterFocusGain();
+      overlayController.restoreAfterFocusGain();
     }
   });
   focusWatcher.start();
@@ -816,7 +735,7 @@ ipcMain.on("toolbar-end-session", () =>
 );
 ipcMain.on("end-session-confirmed", () => endSession());
 ipcMain.on("end-session-cancelled", () => cancelEndSession());
-ipcMain.on("hide-overlay", () => closeOverlay());
+ipcMain.on("hide-overlay", () => overlayController.closeOverlay());
 ipcMain.on("nav-round", (_event, direction) => navRound(direction));
 ipcMain.on("toggle-lock", () => {
   locked = !locked;
@@ -826,21 +745,21 @@ ipcMain.on("toggle-lock", () => {
 
 // PERSIST toggles -- one channel per panel that HAS a persist button
 // (only notepad and scratch, per the design). Each just flips that one
-// id in/out of persistentPanels and tells that panel's own window to
+// id in/out of overlayState.persistentPanels and tells that panel's own window to
 // update its pin icon.
 ipcMain.on("notepad-toggle-persist", () => {
-  if (persistentPanels.has("notepad")) persistentPanels.delete("notepad");
-  else persistentPanels.add("notepad");
+  if (overlayState.persistentPanels.has("notepad")) overlayState.persistentPanels.delete("notepad");
+  else overlayState.persistentPanels.add("notepad");
   pushPersistState("notepad");
 });
 ipcMain.on("scratch-toggle-persist", () => {
-  if (persistentPanels.has("scratch")) persistentPanels.delete("scratch");
-  else persistentPanels.add("scratch");
+  if (overlayState.persistentPanels.has("scratch")) overlayState.persistentPanels.delete("scratch");
+  else overlayState.persistentPanels.add("scratch");
   pushPersistState("scratch");
 });
 
 // ---- IPC: backdrop ----
-ipcMain.on("backdrop-click", () => closeOverlay());
+ipcMain.on("backdrop-click", () => overlayController.closeOverlay());
 
 // ---- IPC: toolbar ----
 // Each line here prints to the TERMINAL (this is main-process code, not
@@ -853,19 +772,19 @@ ipcMain.on("backdrop-click", () => closeOverlay());
 // logging inside that function specifically.
 ipcMain.on("toolbar-open-notepad", () => {
   console.log("[toolbar-ipc] open-notepad received");
-  togglePanel("notepad");
+  overlayController.togglePanel("notepad");
 });
 ipcMain.on("toolbar-open-scratch", () => {
   console.log("[toolbar-ipc] open-scratch received");
-  togglePanel("scratch");
+  overlayController.togglePanel("scratch");
 });
 ipcMain.on("toolbar-open-sessions", () => {
   console.log("[toolbar-ipc] open-sessions received");
-  togglePanel("sessions");
+  overlayController.togglePanel("sessions");
 });
 ipcMain.on("toolbar-open-browser", () => {
   console.log("[toolbar-ipc] open-browser received");
-  togglePanel("browser");
+  overlayController.togglePanel("browser");
 });
 ipcMain.on("toolbar-manual-round", () => {
   console.log("[toolbar-ipc] manual-round received");
@@ -873,7 +792,7 @@ ipcMain.on("toolbar-manual-round", () => {
 });
 ipcMain.on("toolbar-close-overlay", () => {
   console.log("[toolbar-ipc] close-overlay received");
-  closeOverlay();
+  overlayController.closeOverlay();
 });
 
 // ---- IPC: main window controls ----
@@ -888,8 +807,8 @@ registerScratchIpc({
   store: scratchStore,
   onHide: () => {
     hidePanelWindow("scratch");
-    visiblePanels.delete("scratch");
-    if (visiblePanels.size === 0) closeOverlay();
+    overlayState.visiblePanels.delete("scratch");
+    if (overlayState.visiblePanels.size === 0) overlayController.closeOverlay();
   },
 });
 
@@ -904,8 +823,8 @@ ipcMain.on("open-session", (_event, mdFile) =>
 );
 ipcMain.on("sessions-hide", () => {
   hidePanelWindow("sessions");
-  visiblePanels.delete("sessions");
-  if (visiblePanels.size === 0) closeOverlay();
+  overlayState.visiblePanels.delete("sessions");
+  if (overlayState.visiblePanels.size === 0) overlayController.closeOverlay();
 });
 
 // ---- IPC: browser ----
