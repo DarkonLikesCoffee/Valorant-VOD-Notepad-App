@@ -754,9 +754,16 @@ registerSessionIpc({
   store: sessionArchiveStore,
   getActiveSession: () => session,
 });
-ipcMain.on("open-session", (_event, mdFile) =>
-  shell.openPath(path.join(NOTES_DIR, mdFile)),
-);
+ipcMain.on("open-session", (_event, mdFile) => {
+  if (
+    typeof mdFile !== "string" ||
+    path.basename(mdFile) !== mdFile ||
+    !/^session-[A-Za-z0-9_-]+\.md$/.test(mdFile)
+  ) {
+    return;
+  }
+  shell.openPath(path.join(NOTES_DIR, mdFile));
+});
 ipcMain.on("sessions-hide", () => {
   hidePanelWindow("sessions");
   overlayState.visiblePanels.delete("sessions");

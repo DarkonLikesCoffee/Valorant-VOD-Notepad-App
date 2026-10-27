@@ -24,11 +24,13 @@ test("listSessions summarizes results and sorts newest first", (t) => {
   const { notesDir, store } = makeStore(t);
   writeJson(notesDir, "session-older.json", {
     id: "older",
+    status: "closed",
     startedAt: 100,
     rounds: { 1: { outcome: "lost" } },
   });
   writeJson(notesDir, "session-newer.json", {
     id: "newer",
+    status: "closed",
     startedAt: 200,
     rounds: {
       1: { outcome: "won" },
@@ -41,6 +43,7 @@ test("listSessions summarizes results and sorts newest first", (t) => {
   assert.deepEqual(store.listSessions(), [
     {
       id: "newer",
+      status: "closed",
       mdFile: "session-newer.md",
       roundCount: 3,
       startedAt: 200,
@@ -49,6 +52,7 @@ test("listSessions summarizes results and sorts newest first", (t) => {
     },
     {
       id: "older",
+      status: "closed",
       mdFile: "session-older.md",
       roundCount: 1,
       startedAt: 100,
@@ -175,4 +179,26 @@ test("getSessionDetails supports active and archived sessions", (t) => {
     firstHalfSide: null,
   });
   assert.equal(store.getSessionDetails("missing", null), null);
+});
+
+
+test("store rejects unsafe IDs and refuses to mutate or delete an active session", (t) => {
+  const { notesDir, store } = makeStore(t);
+  writeJson(notesDir, "session-live.json", {
+    id: "live",
+    status: "active",
+    startedAt: 300,
+    map: "Ascent",
+    rounds: {},
+  });
+
+  assert.equal(store.getSession("../outside"), null);
+  assert.equal(store.updateClosedSessionDetails("../outside", { map: "Haven" }), false);
+  assert.equal(store.deleteSession("../outside"), false);
+  assert.equal(store.getSessionDetails("../outside", null), null);
+
+  assert.equal(store.updateClosedSessionDetails("live", { map: "Haven" }), false);
+  assert.equal(store.deleteSession("live"), false);
+  assert.equal(store.getSession("live").map, "Ascent");
+  assert.equal(fs.existsSync(path.join(notesDir, "session-live.json")), true);
 });

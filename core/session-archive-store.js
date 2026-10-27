@@ -3,6 +3,10 @@
 const fs = require("fs");
 const path = require("path");
 
+function isSafeSessionId(id) {
+  return typeof id === "string" && /^[A-Za-z0-9_-]+$/.test(id);
+}
+
 /**
  * Reads and updates session files that are stored on disk.
  *
@@ -37,6 +41,7 @@ class SessionArchiveStore {
 
           return {
             id: data.id,
+            status: data.status || "closed",
             mdFile: f.replace(/\.json$/, ".md"),
             roundCount: Object.keys(rounds).length,
             startedAt: data.startedAt,
@@ -53,7 +58,7 @@ class SessionArchiveStore {
   }
 
   getSession(id) {
-    if (!id) return null;
+    if (!isSafeSessionId(id)) return null;
 
     const filePath = path.join(this.notesDir, "session-" + id + ".json");
     if (!fs.existsSync(filePath)) return null;
@@ -66,13 +71,14 @@ class SessionArchiveStore {
   }
 
   updateClosedSessionDetails(id, details) {
-    if (!id || !details) return false;
+    if (!isSafeSessionId(id) || !details) return false;
 
     const filePath = path.join(this.notesDir, "session-" + id + ".json");
     if (!fs.existsSync(filePath)) return false;
 
     try {
       const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      if (data.status === "active") return false;
 
       if ("map" in details) data.map = details.map || null;
       if ("agent" in details) data.agent = details.agent || null;
@@ -109,13 +115,17 @@ class SessionArchiveStore {
   }
 
   deleteSession(id) {
-    if (!id) return false;
+    if (!isSafeSessionId(id)) return false;
 
     const jsonPath = path.join(this.notesDir, "session-" + id + ".json");
     const mdPath = path.join(this.notesDir, "session-" + id + ".md");
 
     try {
-      if (fs.existsSync(jsonPath)) fs.unlinkSync(jsonPath);
+      if (fs.existsSync(jsonPath)) {
+        const data = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+        if (data.status === "active") return false;
+        fs.unlinkSync(jsonPath);
+      }
       if (fs.existsSync(mdPath)) fs.unlinkSync(mdPath);
 
       console.log("[sessions] deleted session " + id);
@@ -130,7 +140,11 @@ class SessionArchiveStore {
   }
 
   getSessionDetails(sessionId, activeSession) {
-    if (!sessionId) {
+    if (sessionId && !isSafeSessionId(sessionId)) return null;
+    if (
+      !sessionId ||
+      (activeSession && activeSession.active && activeSession.id === sessionId)
+    ) {
       if (!activeSession || !activeSession.active) return null;
 
       return {

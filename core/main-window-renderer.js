@@ -68,13 +68,22 @@
         const listEl = document.getElementById("sessions-list");
         const detailEl = document.getElementById("sess-detail");
         const items = await window.mainApp.listSessions();
-        const wins = items.filter(
-          (s) => s.won >= s.lost && s.won + s.lost > 0,
-        ).length;
+        const decided = items.filter(
+          (s) => s.status !== "active" && s.won + s.lost > 0 && s.won !== s.lost,
+        );
+        const wins = decided.filter((s) => s.won > s.lost).length;
+        const losses = decided.filter((s) => s.lost > s.won).length;
+        const live = items.filter((s) => s.status === "active").length;
+        const undecided = items.length - wins - losses - live;
         document.getElementById("sess-count").textContent =
           `${items.length} session${items.length === 1 ? "" : "s"}`;
+        const tally = [];
+        tally.push(`<span style="color:var(--win)">${wins}W</span>`);
+        tally.push(`<span style="color:var(--loss)">${losses}L</span>`);
+        if (live) tally.push(`${live} live`);
+        if (undecided) tally.push(`${undecided} undecided`);
         document.getElementById("sess-wl").innerHTML = items.length
-          ? `<span style="color:var(--win)">${wins}W</span> · <span style="color:var(--loss)">${items.length - wins}L</span>`
+          ? tally.join(" · ")
           : "";
 
         if (!items.length) {
@@ -87,10 +96,16 @@
         for (const s of items) {
           const date = new Date(s.startedAt).toLocaleString();
           const total = s.won + s.lost;
-          const result = total > 0 ? (s.won >= s.lost ? "W" : "L") : null;
-          const tag = result
-            ? `<span class="result-tag ${result === "W" ? "win" : "loss"}">${result}</span>`
-            : `<span class="result-tag" style="background:var(--muted); color:var(--muted-foreground);">—</span>`;
+          const isActive = s.status === "active";
+          const result =
+            !isActive && total > 0 && s.won !== s.lost
+              ? s.won > s.lost ? "W" : "L"
+              : null;
+          const tag = isActive
+            ? `<span class="result-tag" style="background:var(--accent); color:white;">LIVE</span>`
+            : result
+              ? `<span class="result-tag ${result === "W" ? "win" : "loss"}">${result}</span>`
+              : `<span class="result-tag" style="background:var(--muted); color:var(--muted-foreground);">—</span>`;
           const div = document.createElement("div");
           div.className = "sess-row";
           div.innerHTML = `
@@ -142,7 +157,11 @@
                 Edit Details
               </button>
 
-              <button type="button" class="delete-session-btn">
+              <button
+                type="button"
+                class="delete-session-btn"
+                ${isActive ? 'disabled title="End this session before deleting it"' : ""}
+              >
                 Delete Session
               </button>
             `;
