@@ -17,6 +17,7 @@ class OverlayController {
     hideBackdrop,
     isGameFocused,
     showAndFocus,
+    onPersistChange = () => {},
   }) {
     this.state = state;
     this.panelIds = panelIds;
@@ -29,6 +30,7 @@ class OverlayController {
     this.hideBackdrop = hideBackdrop;
     this.isGameFocused = isGameFocused;
     this.showAndFocus = showAndFocus;
+    this.onPersistChange = onPersistChange;
   }
 
   openOverlay() {
@@ -55,13 +57,17 @@ class OverlayController {
   }
 
   closePanel(id) {
-    const wasInOverlay =
-      this.state.overlayOpen && this.state.visiblePanels.has(id);
-
     this.hidePanelWindow(id);
     this.state.visiblePanels.delete(id);
 
-    if (wasInOverlay && this.state.visiblePanels.size === 0) {
+    // An explicit close overrides "keep visible when overlay closes".
+    if (this.state.persistentPanels.delete(id)) {
+      this.onPersistChange(id);
+    }
+
+    // A pinned panel can be visible without belonging to this overlay set.
+    // Always close an otherwise empty overlay after an explicit panel close.
+    if (this.state.overlayOpen && this.state.visiblePanels.size === 0) {
       this.closeOverlay({ alreadyHidden: id });
     }
   }

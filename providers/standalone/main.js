@@ -560,6 +560,7 @@ const overlayController = new OverlayController({
   hideBackdrop,
   isGameFocused: () => overlayState.valorantFocused,
   showAndFocus: (win) => wm.showAndFocus(win),
+  onPersistChange: (id) => pushPersistState(id),
 });
 
 // ---- Hotkeys ----

@@ -19,6 +19,5 @@ contextBridge.exposeInMainWorld('overlay', {
   cancelEndSession: () => ipcRenderer.send('end-session-cancelled'),
   hide: () => ipcRenderer.send('hide-overlay'),
   navRound: (direction) => ipcRenderer.send('nav-round', direction),
-  openSettings: () => ipcRenderer.send('open-settings'),
   togglePersist: () => ipcRenderer.send('notepad-toggle-persist')
 });

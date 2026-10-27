@@ -175,3 +175,21 @@ test("closePanel preserves other visible panels", () => {
   assert.equal(state.overlayOpen, true);
   assert.deepEqual(calls, [["hide", "notepad"]]);
 });
+
+
+test("explicitly closing a pinned panel unpins it and updates its pin indicator", () => {
+  const { controller, state, calls, windows } = makeHarness({ showOnOpen: {} });
+  const notified = [];
+  controller.onPersistChange = (id) => notified.push(id);
+  controller.openOverlay();
+  controller.togglePanel("scratch");
+  state.persistentPanels.add("scratch");
+  calls.length = 0;
+
+  controller.closePanel("scratch");
+
+  assert.equal(windows.scratch.visible, false);
+  assert.equal(state.persistentPanels.has("scratch"), false);
+  assert.deepEqual(notified, ["scratch"]);
+  assert.equal(state.overlayOpen, false);
+});
