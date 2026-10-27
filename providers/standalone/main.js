@@ -637,7 +637,7 @@ const overlayController = new OverlayController({
 // ---- Hotkeys ----
 function registerHotkeys() {
   const handlers = {
-    toggle: overlayController.toggleOverlay,
+    toggle: () => overlayController.toggleOverlay(),
     manualRound: manualNewRound,
     newSession: startSession,
     endSession: requestEndSession,

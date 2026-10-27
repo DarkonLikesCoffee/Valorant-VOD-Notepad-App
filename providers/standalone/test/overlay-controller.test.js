@@ -104,7 +104,10 @@ test("focus loss hides visible panels and focus gain restores the same overlay",
 });
 
 test("togglePanel cannot open outside the game and closes an emptied overlay", () => {
-  const { controller, state, calls } = makeHarness({ focused: false });
+  const { controller, state, calls } = makeHarness({
+    focused: false,
+    showOnOpen: {},
+  });
   controller.togglePanel("scratch");
   assert.equal(state.overlayOpen, false);
   assert.equal(calls.length, 0);
@@ -113,11 +116,10 @@ test("togglePanel cannot open outside the game and closes an emptied overlay", (
   controller.togglePanel("scratch");
   assert.equal(state.overlayOpen, true);
   assert.equal(state.visiblePanels.has("scratch"), true);
-  assert.equal(calls.includes(["show", "scratch"]), false);
+  assert.equal(calls.some((call) => call[0] === "show" && call[1] === "scratch"), true);
 
-  // The only explicitly-added panel is removed, but the default panels
-  // remain because openOverlay applies their showOnOpen preferences.
   controller.togglePanel("scratch");
-  assert.equal(state.overlayOpen, true);
-  assert.equal(state.visiblePanels.has("scratch"), false);
+  assert.equal(state.overlayOpen, false);
+  assert.equal(state.overlayWantsOpen, false);
+  assert.equal(state.visiblePanels.size, 0);
 });
