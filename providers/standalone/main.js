@@ -27,6 +27,8 @@ const settingsStore = require("../../core/settings-store");
 const { RoundWatcher } = require("./round-watcher");
 const { TabCapture } = require("./tab-capture");
 const { FocusWatcher } = require("./focus-watcher");
+const { SessionArchiveStore } = require("../../core/session-archive-store");
+const { registerSessionIpc } = require("../../core/session-ipc");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -43,6 +45,7 @@ if (!gotLock) {
 }
 
 const NOTES_DIR = path.join(app.getPath("documents"), "ValorantVODNotes");
+const sessionArchiveStore = new SessionArchiveStore(NOTES_DIR);
 const SETTINGS_PATH = path.join(app.getPath("userData"), "settings.json");
 const SCRATCH_PATH = path.join(NOTES_DIR, "scratchpad.md");
 
@@ -1001,174 +1004,10 @@ ipcMain.on("scratch-hide", () => {
 });
 
 // ---- IPC: session browser ----
-ipcMain.handle("list-sessions", async () => {
-  if (!fs.existsSync(NOTES_DIR)) return [];
-  const files = fs.readdirSync(NOTES_DIR).filter((f) => f.endsWith(".json"));
-  return files
-    .map((f) => {
-      try {
-        const data = JSON.parse(
-          fs.readFileSync(path.join(NOTES_DIR, f), "utf-8"),
-        );
-        const rounds = data.rounds || {};
-        // Won/lost tally, same logic as SessionManager.saveToDisk's markdown
-        // header -- surfaced here too so the session list can show a
-        // result badge without opening each file.
-        const tally = Object.values(rounds).reduce(
-          (acc, r) => {
-            if (r.outcome === "won") acc.won += 1;
-            if (r.outcome === "lost") acc.lost += 1;
-            return acc;
-          },
-          { won: 0, lost: 0 },
-        );
-        return {
-          id: data.id,
-          mdFile: f.replace(/\.json$/, ".md"),
-          roundCount: Object.keys(rounds).length,
-          startedAt: data.startedAt,
-          won: tally.won,
-          lost: tally.lost,
-        };
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.startedAt - a.startedAt);
-});
-ipcMain.handle("get-session", async (_event, id) => {
-  if (!id) return null;
-
-  const file = `session-${id}.json`;
-  const filePath = path.join(NOTES_DIR, file);
-
-  if (!fs.existsSync(filePath)) return null;
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  } catch {
-    return null;
-  }
-});
-ipcMain.handle("update-closed-session-details", (_event, id, details) => {
-  if (!id || !details) return false;
-
-  const file = `session-${id}.json`;
-  const filePath = path.join(NOTES_DIR, file);
-
-  if (!fs.existsSync(filePath)) return false;
-
-  try {
-    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-
-    if ("map" in details) data.map = details.map || null;
-    if ("agent" in details) data.agent = details.agent || null;
-    if ("gameMode" in details) data.gameMode = details.gameMode || null;
-
-    if ("kills" in details) {
-      data.kills = details.kills === "" ? null : Number(details.kills);
-    }
-
-    if ("deaths" in details) {
-      data.deaths = details.deaths === "" ? null : Number(details.deaths);
-    }
-
-    if ("assists" in details) {
-      data.assists = details.assists === "" ? null : Number(details.assists);
-    }
-
-    if ("rank" in details) data.rank = details.rank || null;
-
-    if ("generalComment" in details) {
-      data.generalComment = details.generalComment || "";
-    }
-
-    if ("firstHalfSide" in details) {
-      data.firstHalfSide = details.firstHalfSide || null;
-    }
-
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-
-    return true;
-  } catch (err) {
-    console.error("[sessions] failed to update session details:", err.message);
-    return false;
-  }
-});
-ipcMain.handle("delete-session", (_event, id) => {
-  if (!id) return false;
-
-  const jsonFile = `session-${id}.json`;
-  const mdFile = `session-${id}.md`;
-
-  const jsonPath = path.join(NOTES_DIR, jsonFile);
-  const mdPath = path.join(NOTES_DIR, mdFile);
-
-  try {
-    if (fs.existsSync(jsonPath)) {
-      fs.unlinkSync(jsonPath);
-    }
-
-    if (fs.existsSync(mdPath)) {
-      fs.unlinkSync(mdPath);
-    }
-
-    console.log(`[sessions] deleted session ${id}`);
-    return true;
-  } catch (err) {
-    console.error(
-      `[sessions] failed to delete session ${id}:`,
-      err.message
-    );
-    return false;
-  }
-});
-ipcMain.handle("update-session-details", (_event, details) => {
-  return session.updateDetails(details);
-});
-ipcMain.handle("get-session-details", (_event, sessionId = null) => {
-  // Si no se proporciona ID, devolver los datos de la sesión activa.
-  if (!sessionId) {
-    if (!session || !session.active) return null;
-
-    return {
-      map: session.map,
-      agent: session.agent,
-      gameMode: session.gameMode,
-      kills: session.kills,
-      deaths: session.deaths,
-      assists: session.assists,
-      rank: session.rank,
-      generalComment: session.generalComment,
-      firstHalfSide: session.firstHalfSide,
-    };
-  }
-
-  // Si se proporciona ID, cargar esa sesión desde su JSON.
-  const file = `session-${sessionId}.json`;
-  const filePath = path.join(NOTES_DIR, file);
-
-  if (!fs.existsSync(filePath)) return null;
-
-  try {
-    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-
-    return {
-      map: data.map || null,
-      agent: data.agent || null,
-      gameMode: data.gameMode || null,
-      kills: data.kills ?? null,
-      deaths: data.deaths ?? null,
-      assists: data.assists ?? null,
-      rank: data.rank || null,
-      generalComment: data.generalComment || "",
-      firstHalfSide: data.firstHalfSide || null,
-    };
-  } catch (err) {
-    console.error("[sessions] failed to load session details:", err.message);
-    return null;
-  }
+registerSessionIpc({
+  ipcMain,
+  store: sessionArchiveStore,
+  getActiveSession: () => session,
 });
 ipcMain.on("open-session", (_event, mdFile) =>
   shell.openPath(path.join(NOTES_DIR, mdFile)),
