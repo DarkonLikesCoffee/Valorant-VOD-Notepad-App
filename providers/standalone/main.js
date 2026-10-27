@@ -586,7 +586,7 @@ const overlayController = new OverlayController({
   showBackdrop,
   showExistingBackdrop,
   hideBackdrop,
-  isGameFocused: () => overlayState.overlayState.valorantFocused,
+  isGameFocused: () => overlayState.valorantFocused,
   showAndFocus: (win) => wm.showAndFocus(win),
 });
 

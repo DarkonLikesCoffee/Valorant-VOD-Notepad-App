@@ -2,6 +2,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { OverlayController } = require("../../../core/overlay-controller");
 
 function makeHarness({ focused = true, showOnOpen = { notepad: true, toolbar: true } } = {}) {
@@ -122,4 +124,20 @@ test("togglePanel cannot open outside the game and closes an emptied overlay", (
   assert.equal(state.overlayOpen, false);
   assert.equal(state.overlayWantsOpen, false);
   assert.equal(state.visiblePanels.size, 0);
+});
+
+
+test("main process wires overlay focus and open intent to the shared state", () => {
+  const mainPath = path.join(__dirname, "..", "main.js");
+  const source = fs.readFileSync(mainPath, "utf8");
+
+  assert.match(
+    source,
+    /isGameFocused:\s*\(\)\s*=>\s*overlayState\.valorantFocused/,
+  );
+  assert.doesNotMatch(source, /overlayState\.overlayState/);
+
+  const stateObject = source.match(/const overlayState = \{([\s\S]*?)\n\};/);
+  assert.ok(stateObject, "main process should declare one overlay state object");
+  assert.match(stateObject[1], /overlayWantsOpen:\s*false/);
 });
