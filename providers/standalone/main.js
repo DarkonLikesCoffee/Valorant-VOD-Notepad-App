@@ -30,6 +30,8 @@ const { FocusWatcher } = require("./focus-watcher");
 const { SessionArchiveStore } = require("../../core/session-archive-store");
 const { registerSessionIpc } = require("../../core/session-ipc");
 const { WindowBounds } = require("../../core/window-bounds");
+const { registerMainWindowIpc } = require("../../core/main-window-ipc");
+const { registerBrowserIpc } = require("../../core/browser-ipc");
 
 // Only one copy of this app should ever run at once. Without this, a
 // crashed/frozen instance left running in the background (e.g. after
@@ -892,23 +894,9 @@ ipcMain.on("toolbar-close-overlay", () => {
 });
 
 // ---- IPC: main window controls ----
-// Now that main-window.js is frame:false, there's no OS-provided
-// minimize/maximize/close -- these three replace exactly that, acting
-// directly on the mainWin BrowserWindow instance. Same pattern to reuse
-// if any OTHER window ever goes frameless and needs its own controls.
-ipcMain.on("main-window-minimize", () => {
-  console.log("[main-window-ipc] minimize received");
-  if (mainWin) mainWin.minimize();
-});
-ipcMain.on("main-window-toggle-maximize", () => {
-  console.log("[main-window-ipc] toggle-maximize received");
-  if (!mainWin) return;
-  if (mainWin.isMaximized()) mainWin.unmaximize();
-  else mainWin.maximize();
-});
-ipcMain.on("main-window-close", () => {
-  console.log("[main-window-ipc] close received");
-  if (mainWin) mainWin.close();
+registerMainWindowIpc({
+  ipcMain,
+  getMainWindow: () => mainWin,
 });
 
 // ---- IPC: scratch notepad ----
@@ -943,50 +931,9 @@ ipcMain.on("sessions-hide", () => {
 });
 
 // ---- IPC: browser ----
-ipcMain.on("browser-go-back", () => {
-  if (!browserWin) return;
-
-  const webView = browserWin.browserWebView;
-
-  if (webView && webView.webContents.canGoBack()) {
-    webView.webContents.goBack();
-  }
-});
-
-ipcMain.on("browser-go-forward", () => {
-  if (!browserWin) return;
-
-  const webView = browserWin.browserWebView;
-
-  if (webView && webView.webContents.canGoForward()) {
-    webView.webContents.goForward();
-  }
-});
-
-ipcMain.on("browser-reload", () => {
-  if (!browserWin) return;
-
-  const webView = browserWin.browserWebView;
-
-  if (webView) {
-    webView.webContents.reload();
-  }
-});
-
-ipcMain.on("browser-navigate", (_event, url) => {
-  if (!browserWin) return;
-
-  const webView = browserWin.browserWebView;
-
-  if (webView) {
-    webView.webContents.loadURL(url);
-  }
-});
-
-ipcMain.on("browser-close", () => {
-  if (!browserWin) return;
-
-  browserWin.hide();
+registerBrowserIpc({
+  ipcMain,
+  getBrowserWindow: () => browserWin,
 });
 
 // ---- IPC: settings ----
