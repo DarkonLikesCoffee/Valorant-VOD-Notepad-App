@@ -252,63 +252,6 @@ class SessionManager {
     return true;
   }
 
-  updateClosedSessionDetails(sessionId, details = {}) {
-    const files = fs
-      .readdirSync(this.notesDir)
-      .filter((file) => file.endsWith(".json"));
-
-    const file = files.find((file) => {
-      try {
-        const data = JSON.parse(
-          fs.readFileSync(path.join(this.notesDir, file), "utf8"),
-        );
-        return data.id === sessionId;
-      } catch {
-        return false;
-      }
-    });
-
-    if (!file) return false;
-
-    const jsonPath = path.join(this.notesDir, file);
-
-    try {
-      const data = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
-
-      if ("map" in details) data.map = details.map || null;
-      if ("agent" in details) data.agent = details.agent || null;
-      if ("gameMode" in details) data.gameMode = details.gameMode || null;
-
-      if ("kills" in details)
-        data.kills = details.kills === "" ? null : Number(details.kills);
-
-      if ("deaths" in details)
-        data.deaths = details.deaths === "" ? null : Number(details.deaths);
-
-      if ("assists" in details)
-        data.assists = details.assists === "" ? null : Number(details.assists);
-
-      if ("rank" in details) data.rank = details.rank || null;
-
-      if ("generalComment" in details)
-        data.generalComment = details.generalComment || "";
-
-      if ("firstHalfSide" in details)
-        data.firstHalfSide = details.firstHalfSide || null;
-
-      fs.writeFileSync(jsonPath, JSON.stringify(data, null, 2));
-
-      return true;
-    } catch (err) {
-      console.error(
-        "session: failed to update closed session",
-        sessionId,
-        err.message,
-      );
-      return false;
-    }
-  }
-
   saveToDisk() {
     if (!this.jsonPath || !this.mdPath) return;
     fs.writeFileSync(this.jsonPath, JSON.stringify(this, null, 2));
